@@ -23,7 +23,6 @@ import random
     
 device = 2
 
-dir_mfcc = None
 # csv_info = '/encryptedfs/scripts/dvoice_lstm/dvoice_labels/rekey_revalue/2020102121/rekey_revalue_(485)_[813]_2020102121_dvoice_dr_mci_or_null_excluded_add_mfccs.csv'
 
 if len(sys.argv) == 1:
@@ -86,9 +85,9 @@ for seed, dir_rsl in seed_to_dir.items():
         
     for i in range(5):
         kwargs = {'comb': (i,), 'seed': seed, 'holdout_test': True}
-        dset_trn = AudioDataset(dir_mfcc, csv_info, 'TRN', **kwargs)
-        dset_vld = AudioDataset(dir_mfcc, csv_info, 'VLD', **kwargs)
-        dset_tst = AudioDataset(dir_mfcc, csv_info, 'TST', **kwargs)
+        dset_trn = AudioDataset(csv_info, 'TRN', **kwargs)
+        dset_vld = AudioDataset(csv_info, 'VLD', **kwargs)
+        dset_tst = AudioDataset(csv_info, 'TST', **kwargs)
          
         # initialize model
         model = Model_LSTM(n_concat=10, hidden_dim=64, device=device)
