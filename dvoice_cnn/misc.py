@@ -11,15 +11,14 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_auc_score, roc_curve, auc
 from sklearn.metrics import precision_recall_curve, average_precision_score
 from scipy import interp
-    
 
 def calc_performance_metrics(scr, lbl):
-    
+    """
+    calculate performance metrics;
+    """
     met = dict()
-    
     # prediction
-    prd = (scr > .5) * 1 
-    
+    prd = (scr > .5) * 1
     # metrics
     met['mat'] = confusion_matrix(y_true=lbl, y_pred=prd)
     TN, FP, FN, TP = met['mat'].ravel()
@@ -33,12 +32,12 @@ def calc_performance_metrics(scr, lbl):
     met['f1s'] = 2 * (met['prc'] * met['sen']) / (met['prc'] + met['sen'])
     met['mcc'] = (TP / N - S * P) / np.sqrt(P * S * (1-S) * (1-P))
     met['auc'] = roc_auc_score(y_true=lbl, y_score=scr)
-    
     return met
 
-
 def show_performance_metrics(met):
-    
+    """
+    print performance metrics;
+    """
     print('\tmat: {}'.format(np.array_repr(met['mat']).replace('\n', '')))
     print('\tacc: {}'.format(met['acc']))
     print('\tsen: {}'.format(met['sen']))
@@ -48,9 +47,10 @@ def show_performance_metrics(met):
     print('\tmcc: {}'.format(met['mcc']))
     print('\tauc: {}'.format(met['auc']))
 
-
 def get_roc_info(lst_lbl, lst_scr):
-    
+    """
+    calculate ROC information;
+    """
     fpr_pt = np.linspace(0, 1, 1001)
     tprs, aucs = [], []
     for lbl, scr in zip(lst_lbl, lst_scr):
@@ -65,7 +65,6 @@ def get_roc_info(lst_lbl, lst_scr):
     auc_mean = auc(fpr_pt, tprs_mean)
     auc_std = np.std(aucs)
     auc_std = 1 - auc_mean if auc_mean + auc_std > 1 else auc_std
-
     rslt = {'xs': fpr_pt,
             'ys_mean': tprs_mean,
             'ys_upper': tprs_upper,
@@ -75,8 +74,10 @@ def get_roc_info(lst_lbl, lst_scr):
 
     return rslt
 
-
 def pr_interp(rc_, rc, pr):
+    """
+    interpolate PR;
+    """
     pr_ = np.zeros_like(rc_)
     locs = np.searchsorted(rc, rc_)
     for idx, loc in enumerate(locs):
@@ -96,8 +97,10 @@ def pr_interp(rc_, rc, pr):
         pr_[idx] = rc_[idx] / (a * rc_[idx] + b)
     return pr_
 
-
 def get_pr_info(lst_lbl, lst_scr):
+    """
+    calculate PR info;
+    """
     rc_pt = np.linspace(0, 1, 1001)
     rc_pt[0] = 1e-16
     prs = []
@@ -115,7 +118,6 @@ def get_pr_info(lst_lbl, lst_scr):
     aps_mean = np.mean(aps)
     aps_std = np.std(aps)
     aps_std = 1 - aps_mean if aps_mean + aps_std > 1 else aps_std
-
     rslt = {'xs': rc_pt,
             'ys_mean': prs_mean,
             'ys_upper': prs_upper,
@@ -123,9 +125,4 @@ def get_pr_info(lst_lbl, lst_scr):
             'auc_mean': aps_mean,
             'auc_std': aps_std}
 
-    return rslt    
-    
-   
-if __name__ == '__main__':
-    
-    pass
+    return rslt
