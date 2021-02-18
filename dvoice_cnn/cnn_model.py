@@ -29,17 +29,21 @@ class Model_CNN:
         self.to(device)
         self.device = device
 
-    def fit(self, dset_trn, dset_vld=None, n_epoch=32, b_size=4, lr=.001, weights=None):
+    def fit(self, dset_trn, dset_vld=None, n_epoch=32, b_size=4, lr=.001, weights=None,
+        sample_two_thirds=False):
         """
         fit method;
         """
         if weights is None:
             weights = []
-        wrs = WeightedRandomSampler(dset_trn.df_sampling_weights,
-            int(np.ceil(len(dset_trn) * (2/3))), replacement=False)
+        if sample_two_thirds:
+            wrs = WeightedRandomSampler(dset_trn.df_sampling_weights,
+                int(np.ceil(len(dset_trn) * (2/3))), replacement=False)
+        else:
+            wrs = None
         # initialize data loaders
         kwargs = {'batch_size': b_size,
-                  # 'shuffle': True,
+                  #'shuffle': True,
                   'shuffle': False,
                   'num_workers': 1,
                   'collate_fn': collate_fn,
@@ -62,10 +66,10 @@ class Model_CNN:
                 ascii=True, bar_format='{l_bar}{r_bar}', file=sys.stdout) as pbar:
                 for Xs, ys, _ in dldr_trn:
                     # mount data to device
-                    for _, xs_item in enumerate(Xs):
-                        xs_item = torch.tensor(xs_item, dtype=torch.float32, device=self.nn.device)
-                        xs_item = xs_item.permute(1, 0)
-                        xs_item = xs_item.view(1, xs_item.shape[0], xs_item.shape[1])
+                    for idx, _ in enumerate(Xs):
+                        Xs[idx] = torch.tensor(Xs[idx], dtype=torch.float32, device=self.nn.device)
+                        Xs[idx] = Xs[idx].permute(1, 0)
+                        Xs[idx] = Xs[idx].view(1, Xs[idx].shape[0], Xs[idx].shape[1])
                     ys = torch.tensor(ys, dtype=torch.long, device=self.nn.device)
                     # forward and backward propagation
                     self.nn.zero_grad()
@@ -124,10 +128,10 @@ class Model_CNN:
                 bar_format='{l_bar}{r_bar}', file=sys.stdout) as pbar:
                 for Xs, _, _ in dldr:
                     # mount data to device
-                    for _, xs_item in enumerate(Xs):
-                        xs_item = torch.tensor(xs_item, dtype=torch.float32, device=self.nn.device)
-                        xs_item = xs_item.permute(1, 0)
-                        xs_item = xs_item.view(1, xs_item.shape[0], xs_item.shape[1])
+                    for idx, _ in enumerate(Xs):
+                        Xs[idx] = torch.tensor(Xs[idx], dtype=torch.float32, device=self.nn.device)
+                        Xs[idx] = Xs[idx].permute(1, 0)
+                        Xs[idx] = Xs[idx].view(1, Xs[idx].shape[0], Xs[idx].shape[1])
                     out = self.nn(Xs)
                     # append batch outputs to result
                     rsl.append(out.data.cpu().numpy())
@@ -188,10 +192,10 @@ class Model_CNN:
                 bar_format='{l_bar}{r_bar}', file=sys.stdout) as pbar:
                 for Xs, _, _ in dldr:
                     # mount data to device
-                    for _, xs_item in enumerate(Xs):
-                        xs_item = torch.tensor(xs_item, dtype=torch.float32, device=self.nn.device)
-                        xs_item = xs_item.permute(1, 0)
-                        xs_item = xs_item.view(1, xs_item.shape[0], xs_item.shape[1])
+                    for idx, _ in enumerate(Xs):
+                        Xs[idx] = torch.tensor(Xs[idx], dtype=torch.float32, device=self.nn.device)
+                        Xs[idx] = Xs[idx].permute(1, 0)
+                        Xs[idx] = Xs[idx].view(1, Xs[idx].shape[0], Xs[idx].shape[1])
                     out = self.nn.forward_wo_gpool(Xs)
                     # append batch outputs to result
                     rsl += out
