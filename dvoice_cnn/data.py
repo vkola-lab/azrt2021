@@ -6,18 +6,29 @@ Created on Wed Jul 22 12:57:49 2020
 @author: cxue2
 """
 import os
-import random
 from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
+import fhs_split_dataframe as fhs_sdf
 
 class AudioDataset(Dataset):
     """dVoice dataset."""
 
-    def __init__(self, csv, mode, comb=(0, 1), seed=3227, holdout_test=False):
+    def __init__(self, csv, mode, **kwargs):
         """
         init function;
         """
+        num_folds = kwargs.get('num_folds', 5)
+        vld_idx = kwargs.get('vld_idx')
+        tst_idx = kwargs.get('tst_idx')
+        seed = kwargs.get('seed', 3227)
+        holdout_test = kwargs.get('holdout_test', False)
+        get_trn_test = kwargs.get('get_trn_test_func', fhs_sdf.get_trn_test)
+        get_trn_test_kw = kwargs.get('get_trn_test_func_kw', {})
+        get_samples = kwargs.get('get_samples', fhs_sdf.get_samples)
+        get_samples_kw = kwargs.get('get_samples_kw', {})
+        create_folds = kwargs.get('create_folds', fhs_sdf.create_folds)
+        create_folds_kw = kwargs.get('create_folds_kw', {})
         # assertions
         assert mode in ['TRN', 'VLD', 'TST']
         # instance variables
@@ -25,48 +36,57 @@ class AudioDataset(Dataset):
         self.df = None
         # read csv file
         df_raw = pd.read_csv(csv, dtype=object)
-        df_test = df_raw.loc[df_raw["duration_csv_out_list_len"] != "0"]
-        df_other = df_raw.loc[df_raw["duration_csv_out_list_len"] == "0"]
+        df_test, df_other = get_trn_test(df_raw, **get_trn_test_kw)
         # list of all unique patients
-        df_pts = df_raw if not holdout_test else df_other
-        tmp_0 = df_pts.idtype.values.ravel('K')
-        tmp_1 = df_pts.id.values.ravel('K')
-        tmp_2 = ['{}-{}'.format(tmp_0[i], tmp_1[i]) for i in range(len(tmp_0))]
-        lst_p_all = np.unique(tmp_2)  # remove duplication
-        if holdout_test:
-            tmp_idtype = df_test.idtype.values.ravel('K')
-            tmp_id = df_test.id.values.ravel('K')
-            test_ids  = ['{}-{}'.format(tmp_idtype[i], tmp_id[i]) for i in range(len(tmp_idtype))]
-            lst_p_all = np.array([p for p in lst_p_all if p not in test_ids])
+
+        # df_pts = df_raw if not holdout_test else df_other
+        # tmp_0 = df_pts.idtype.values.ravel('K')
+        # tmp_1 = df_pts.id.values.ravel('K')
+        # tmp_2 = ['{}-{}'.format(tmp_0[i], tmp_1[i]) for i in range(len(tmp_0))]
+        # lst_p_all = np.unique(tmp_2)  # remove duplication
+
+        lst_p_all = get_samples(df_raw, df_other, holdout_test, **get_samples_kw)
+
+        # if holdout_test:
+        #     tmp_idtype = df_test.idtype.values.ravel('K')
+        #     tmp_id = df_test.id.values.ravel('K')
+        #     test_ids  = ['{}-{}'.format(tmp_idtype[i], tmp_id[i]) for i in range(len(tmp_idtype))]
+        #     lst_p_all = np.array([p for p in lst_p_all if p not in test_ids])
         print('# of unique patients found in the csv file: {}'.format(len(lst_p_all)))
         # split patients into 5 folds.
-        random.seed(seed)
-        lst_idx = np.array(range(len(lst_p_all)))
-        random.shuffle(lst_idx)
-        fld = [lst_idx[np.arange(len(lst_p_all)) % 5 == i] for i in range(5)]
+        # random.seed(seed)
+        # lst_idx = np.array(range(len(lst_p_all)))
+        # random.shuffle(lst_idx)
+        # fld = [lst_idx[np.arange(len(lst_p_all)) % 5 == i] for i in range(5)]
+
+        fld = create_folds(lst_p_all, num_folds, seed, **create_folds_kw)
         # split dataset
         if not holdout_test:
-            if mode == 'VLD':
-                idx = fld[comb[0]]
-            elif mode == 'TST':
-                idx = fld[comb[1]]
-            else:
-                tmp = [0, 1, 2, 3, 4]
-                tmp.remove(comb[0])
-                tmp.remove(comb[1])
-                idx = np.concatenate([fld[tmp[i]] for i in range(3)])
-            lst_p = lst_p_all[idx]
+            lst_p = fhs_sdf.get_fold(lst_p_all, fld, vld_idx, tst_idx, mode)
         else:
-            if mode == "TST":
-                lst_p  = test_ids
-            elif mode == 'TRN':
-                tmp = [0, 1, 2, 3, 4]
-                tmp.remove(comb[0])
-                idx = np.concatenate([fld[tmp[i]] for i in range(4)])
-                lst_p = lst_p_all[idx]
-            else:
-                idx = fld[comb[0]]
-                lst_p = lst_p_all[idx]
+            lst_p = fhs_sdf.get_holdout_fold(lst_p_all, df_test, fld, vld_idx, mode)
+        # if not holdout_test:
+        #     if mode == 'VLD':
+        #         idx = fld[comb[0]]
+        #     elif mode == 'TST':
+        #         idx = fld[comb[1]]
+        #     else:
+        #         tmp = [0, 1, 2, 3, 4]
+        #         tmp.remove(comb[0])
+        #         tmp.remove(comb[1])
+        #         idx = np.concatenate([fld[tmp[i]] for i in range(3)])
+        #     lst_p = lst_p_all[idx]
+        # else:
+        #     if mode == "TST":
+        #         lst_p  = test_ids
+        #     elif mode == 'TRN':
+        #         tmp = [0, 1, 2, 3, 4]
+        #         tmp.remove(comb[0])
+        #         idx = np.concatenate([fld[tmp[i]] for i in range(4)])
+        #         lst_p = lst_p_all[idx]
+        #     else:
+        #         idx = fld[comb[0]]
+        #         lst_p = lst_p_all[idx]
         print('Dataset mode: \'{}\''.format(mode))
         print('NumPy random seed: {}'.format(seed))
         print('# of the selected patients: {}'.format(len(np.unique(lst_p))))
