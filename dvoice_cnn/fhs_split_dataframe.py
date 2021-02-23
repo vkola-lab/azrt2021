@@ -63,8 +63,8 @@ def get_fold(lst_p_all, fld, vld_idx, tst_idx, mode):
     elif mode == 'TRN':
         all_fold_indices = np.arange(len(fld))
         ## if 5 folds, then all_fold_indices = [0, 1, 2, 3, 4]
-        all_fold_indices.remove(vld_idx)
-        all_fold_indices.remove(tst_idx)
+        all_fold_indices = all_fold_indices[all_fold_indices != vld_idx]
+        all_fold_indices = all_fold_indices[all_fold_indices != tst_idx]
         ## keep all fold indices except for the TRN and VLD indices;
         idx = np.concatenate([fld[all_fold_indices[i]] for i in range(len(all_fold_indices) - 2)])
     return lst_p_all[idx]
@@ -79,7 +79,7 @@ def get_holdout_fold(lst_p_all, df_test, fld, vld_idx, mode):
         lst_p = get_fhs_ids(df_test)
     elif mode == 'TRN':
         all_fold_indices = np.arange(len(fld))
-        all_fold_indices.remove(vld_idx)
+        all_fold_indices = all_fold_indices[all_fold_indices != vld_idx]
         idx = np.concatenate([fld[all_fold_indices[i]] for i in range(len(all_fold_indices) - 1)])
         lst_p = lst_p_all[idx]
     elif mode == 'VLD':

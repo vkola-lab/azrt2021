@@ -33,7 +33,7 @@ def main():
     if sample_two_thirds:
         ext += "_two_thirds_sample_size"
 
-    n_epoch = 2
+    n_epoch = 1
     do_random = True
     get_dir_rsl = lambda e, n, s: f'results/holdout_test_{e}/{n}_epochs/{s}'
 
@@ -51,7 +51,6 @@ def main():
             seed_list.append(seed)
 
     seed_to_dir = {s: get_dir_rsl(ext, n_epoch, s) for s in seed_list}
-
     for seed, dir_rsl in seed_to_dir.items():
         assert not os.path.isdir(dir_rsl), dir_rsl
         # create folder for saving results
@@ -62,7 +61,8 @@ def main():
                 raise
 
         for i in range(5):
-            kwargs = {'comb': (i,), 'seed': seed, 'holdout_test': True}
+            kwargs = {'num_folds': 5, 'vld_idx': i, 'tst_idx': None, 'seed': seed,
+               'holdout_test': True}
             dset_trn = AudioDataset(csv_info, 'TRN', **kwargs)
             dset_vld = AudioDataset(csv_info, 'VLD', **kwargs)
             dset_tst = AudioDataset(csv_info, 'TST', **kwargs)
@@ -71,8 +71,10 @@ def main():
             model = Model_CNN(n_concat=10, device=device)
 
             # train model
-            model.fit(dset_trn, dset_vld=dset_vld, n_epoch=n_epoch, b_size=4, lr=1e-4,
-                weights=weights, sample_two_thirds=sample_two_thirds)
+            model_fit_kw = {'dset_vld': dset_vld, 'n_epoch': n_epoch, 'b_size': 4,
+                'lr': 1e-4, 'weights': weights, 'sample_two_thirds': sample_two_thirds,
+                'debug_stop': True}
+            model.fit(dset_trn, **model_fit_kw)
             if not os.path.isdir(f"pt_files/{ext}"):
                 os.makedirs(f"pt_files/{ext}")
             model.save_model(f"./pt_files/{ext}/{ext}_holdout_model_{i}_{seed}_{n_epoch}_epochs.pt")

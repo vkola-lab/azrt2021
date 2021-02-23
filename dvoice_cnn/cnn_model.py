@@ -29,13 +29,18 @@ class Model_CNN:
         self.to(device)
         self.device = device
 
-    def fit(self, dset_trn, dset_vld=None, n_epoch=32, b_size=4, lr=.001, weights=None,
-        sample_two_thirds=False):
+    def fit(self, dset_trn, **kwargs):
         """
         fit method;
         """
-        if weights is None:
-            weights = []
+        dset_vld = kwargs.get('dset_vld')
+        n_epoch = kwargs.get('n_epoch', 32)
+        b_size = kwargs.get('b_size', 4)
+        lr = kwargs.get('lr', 0.001)
+        weights = kwargs.get('weights', [])
+        sample_two_thirds = kwargs.get('sample_two_thirds', False)
+        debug_stop = kwargs.get('debug_stop', False)
+
         if sample_two_thirds:
             wrs = WeightedRandomSampler(dset_trn.df_sampling_weights,
                 int(np.ceil(len(dset_trn) * (2/3))), replacement=False)
@@ -56,63 +61,69 @@ class Model_CNN:
         op = torch.optim.Adam(self.nn.parameters(), lr=lr)
         # for model selection
         vld_mcc = -1
-        for epoch in range(n_epoch):
-            # set model to training mode
-            self.nn.train()
-            # model performance statistics
-            cum_loss, cum_corr, count = 0, 0, 0
-            # training loop
-            with tqdm(total=len(dset_trn), desc='Epoch {:03d} (TRN)'.format(epoch),
-                ascii=True, bar_format='{l_bar}{r_bar}', file=sys.stdout) as pbar:
-                for Xs, ys, _ in dldr_trn:
-                    # mount data to device
-                    for idx, _ in enumerate(Xs):
-                        Xs[idx] = torch.tensor(Xs[idx], dtype=torch.float32, device=self.nn.device)
-                        Xs[idx] = Xs[idx].permute(1, 0)
-                        Xs[idx] = Xs[idx].view(1, Xs[idx].shape[0], Xs[idx].shape[1])
-                    ys = torch.tensor(ys, dtype=torch.long, device=self.nn.device)
-                    # forward and backward propagation
-                    self.nn.zero_grad()
-                    scores = self.nn(Xs)
-                    # loss
-                    loss = loss_fn(scores, ys)
-                    loss.backward()
-                    op.step()
-                    pred = torch.argmax(scores, 1)
-                    # accumulated loss
-                    cum_loss += loss.data.cpu().numpy() * len(ys)
-                    # accumulated no. of correct predictions
-                    cum_corr += (pred == ys).sum().data.cpu().numpy()
-                    # accumulated no. of processed samples
-                    count += len(ys)
-                    # update statistics and progress bar
-                    pbar.set_postfix({
-                        'loss': '{:.6f}'.format(cum_loss / count),
-                        'acc' : '{:.6f}'.format(cum_corr / count)
-                    })
-                    pbar.update(len(ys))
-            # forward validation dataset
-            scr = self.prob(dset_vld)
-            # calculate audio-level performance metrics
-            met = calc_performance_metrics(scr, dset_vld.labels)
-            print('Audio-level validation performance:')
-            show_performance_metrics(met)
-            print()
-            # save model
-            if np.isnan(met['mcc']):
-                continue
-            if vld_mcc <= met['mcc']:
-                vld_mcc = met['mcc']
-                self.save_model('./tmp.pt')
-        # load best model
-        if dset_vld is not None and vld_mcc != -1:
-            self.load_model('./tmp.pt')
+        if not debug_stop:
+            for epoch in range(n_epoch):
+                # set model to training mode
+                self.nn.train()
+                # model performance statistics
+                cum_loss, cum_corr, count = 0, 0, 0
+                # training loop
+                with tqdm(total=len(dset_trn), desc='Epoch {:03d} (TRN)'.format(epoch),
+                    ascii=True, bar_format='{l_bar}{r_bar}', file=sys.stdout) as pbar:
+                    for Xs, ys, _ in dldr_trn:
+                        # mount data to device
+                        for idx, _ in enumerate(Xs):
+                            Xs[idx] = torch.tensor(Xs[idx], dtype=torch.float32,
+                                device=self.nn.device)
+                            Xs[idx] = Xs[idx].permute(1, 0)
+                            Xs[idx] = Xs[idx].view(1, Xs[idx].shape[0], Xs[idx].shape[1])
+                        ys = torch.tensor(ys, dtype=torch.long, device=self.nn.device)
+                        # forward and backward propagation
+                        self.nn.zero_grad()
+                        scores = self.nn(Xs)
+                        # loss
+                        loss = loss_fn(scores, ys)
+                        loss.backward()
+                        op.step()
+                        pred = torch.argmax(scores, 1)
+                        # accumulated loss
+                        cum_loss += loss.data.cpu().numpy() * len(ys)
+                        # accumulated no. of correct predictions
+                        cum_corr += (pred == ys).sum().data.cpu().numpy()
+                        # accumulated no. of processed samples
+                        count += len(ys)
+                        # update statistics and progress bar
+                        pbar.set_postfix({
+                            'loss': '{:.6f}'.format(cum_loss / count),
+                            'acc' : '{:.6f}'.format(cum_corr / count)
+                        })
+                        pbar.update(len(ys))
+                # forward validation dataset
+                scr = self.prob(dset_vld)
+                # calculate audio-level performance metrics
+                met = calc_performance_metrics(scr, dset_vld.labels)
+                print('Audio-level validation performance:')
+                show_performance_metrics(met)
+                print()
+                # save model
+                if np.isnan(met['mcc']):
+                    continue
+                if vld_mcc <= met['mcc']:
+                    vld_mcc = met['mcc']
+                    self.save_model('./tmp.pt')
+            # load best model
+            if dset_vld is not None and vld_mcc != -1:
+                self.load_model('./tmp.pt')
 
-    def eval(self, dset, b_size=32):
+    def eval(self, dset, **kwargs):
         """
         eval model;
         """
+        b_size = kwargs.get('b_size', 32)
+        debug_stop = kwargs.get('debug_stop', False)
         # set model to validation mode
+        if debug_stop:
+            return []
         self.nn.eval()
         # initialize data loader
         kwargs = {'batch_size': b_size,
@@ -146,7 +157,7 @@ class Model_CNN:
         calculate model output (probability);
         """
         # get network output
-        rsl = self.eval(dset, b_size)
+        rsl = self.eval(dset, b_size=b_size)
         # convert output to probability by softmax
         rsl = np.exp(rsl)[:,1] / np.sum(np.exp(rsl), axis=1)
         return rsl
