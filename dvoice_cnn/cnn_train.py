@@ -24,7 +24,7 @@ def main():
     """
     device = 2
     num_folds = 5
-    holdout_test = True
+    holdout_test = False
     debug_stop = False
     save_model = True
     csv_info, ext, _ = cnn_argv(sys.argv)
@@ -42,7 +42,8 @@ def main():
         ext += "_static_test_fold"
 
     n_epoch = 1
-    do_random = False
+    do_random = True
+    num_seeds = 1
     get_dir_rsl = lambda e, n, s: f'results/cnn_{e}/{n}_epochs/{s}'
 
     if not do_random:
@@ -50,7 +51,7 @@ def main():
     else:
         # seed_list = [21269, 19952]
         seed_list = []
-        for i in range(10):
+        for i in range(num_seeds):
             seed = random.randint(0, 100000)
             dir_rsl = get_dir_rsl(ext, n_epoch, seed)
             while os.path.isdir(dir_rsl):

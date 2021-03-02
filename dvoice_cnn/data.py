@@ -29,6 +29,11 @@ class AudioDataset(Dataset):
         get_samples_kw = kwargs.get('get_samples_kw', {})
         create_folds = kwargs.get('create_folds', fhs_sdf.create_folds)
         create_folds_kw = kwargs.get('create_folds_kw', {})
+        get_label = kwargs.get('get_label', lambda r: int(r['is_demented_at_recording']))
+        get_label_kw = kwargs.get('get_label_kw', {})
+        get_audio = kwargs.get('get_audio', lambda r: r['mfcc_npy_files']\
+            .strip('[]').replace('\'', '').split(', '))
+        get_audio_kw = kwargs.get('get_audio_kw', {})
         # assertions
         assert mode in ['TRN', 'VLD', 'TST']
         # instance variables
@@ -38,26 +43,8 @@ class AudioDataset(Dataset):
         df_raw = pd.read_csv(csv, dtype=object)
         df_test, df_other = get_trn_test(df_raw, **get_trn_test_kw)
         # list of all unique patients
-
-        # df_pts = df_raw if not holdout_test else df_other
-        # tmp_0 = df_pts.idtype.values.ravel('K')
-        # tmp_1 = df_pts.id.values.ravel('K')
-        # tmp_2 = ['{}-{}'.format(tmp_0[i], tmp_1[i]) for i in range(len(tmp_0))]
-        # lst_p_all = np.unique(tmp_2)  # remove duplication
-
         lst_p_all = get_samples(df_raw, df_other, holdout_test, **get_samples_kw)
-
-        # if holdout_test:
-        #     tmp_idtype = df_test.idtype.values.ravel('K')
-        #     tmp_id = df_test.id.values.ravel('K')
-        #     test_ids  = ['{}-{}'.format(tmp_idtype[i], tmp_id[i]) for i in range(len(tmp_idtype))]
-        #     lst_p_all = np.array([p for p in lst_p_all if p not in test_ids])
         print('# of unique patients found in the csv file: {}'.format(len(lst_p_all)))
-        # split patients into 5 folds.
-        # random.seed(seed)
-        # lst_idx = np.array(range(len(lst_p_all)))
-        # random.shuffle(lst_idx)
-        # fld = [lst_idx[np.arange(len(lst_p_all)) % 5 == i] for i in range(5)]
 
         fld = create_folds(lst_p_all, num_folds, seed, **create_folds_kw)
         # split dataset
@@ -65,28 +52,7 @@ class AudioDataset(Dataset):
             lst_p = fhs_sdf.get_fold(lst_p_all, fld, vld_idx, tst_idx, mode)
         else:
             lst_p = fhs_sdf.get_holdout_fold(lst_p_all, df_test, fld, vld_idx, mode)
-        # if not holdout_test:
-        #     if mode == 'VLD':
-        #         idx = fld[comb[0]]
-        #     elif mode == 'TST':
-        #         idx = fld[comb[1]]
-        #     else:
-        #         tmp = [0, 1, 2, 3, 4]
-        #         tmp.remove(comb[0])
-        #         tmp.remove(comb[1])
-        #         idx = np.concatenate([fld[tmp[i]] for i in range(3)])
-        #     lst_p = lst_p_all[idx]
-        # else:
-        #     if mode == "TST":
-        #         lst_p  = test_ids
-        #     elif mode == 'TRN':
-        #         tmp = [0, 1, 2, 3, 4]
-        #         tmp.remove(comb[0])
-        #         idx = np.concatenate([fld[tmp[i]] for i in range(4)])
-        #         lst_p = lst_p_all[idx]
-        #     else:
-        #         idx = fld[comb[0]]
-        #         lst_p = lst_p_all[idx]
+
         print('Dataset mode: \'{}\''.format(mode))
         print('NumPy random seed: {}'.format(seed))
         print('# of the selected patients: {}'.format(len(np.unique(lst_p))))
@@ -100,11 +66,10 @@ class AudioDataset(Dataset):
             if pid not in set_p:
                 continue
             # label
-            lbl = int(row['is_demented_at_recording'])
+            lbl = get_label(row, **get_label_kw)
             # audio filename (convert to list; possibly more than 1 file)
-            fns = row['mfcc_npy_files']
-            fns = fns.strip('[]').replace('\'', '').split(', ')
-            # fns = [os.path.basename(fn) for fn in fns]
+            fns = get_audio(row, **get_audio_kw)
+
             transcript_fns = row['duration_csv_out_list']
             transcript_fns = transcript_fns.replace('\\', '/')
             transcript_fns = transcript_fns.strip('[]').replace('\'', '').split(', ')
