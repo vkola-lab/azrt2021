@@ -3,6 +3,7 @@ fhs_split_dataframe.py
 functions meant to split the dataset into
 training and validation sets;
 """
+import os
 import random
 import numpy as np
 
@@ -87,3 +88,23 @@ def get_holdout_fold(sample_ids, test_ids, folds, vld_idx, mode):
         idx = folds[vld_idx]
         current_mode_ids = sample_ids[idx]
     return current_mode_ids
+
+def get_row_data(row, pid, lbl, fns):
+    """
+    get row data from row, label, and files;
+    """
+    row_data_list = []
+    transcript_fns = row['duration_csv_out_list']
+    transcript_fns = transcript_fns.replace('\\', '/')
+    transcript_fns = transcript_fns.strip('[]').replace('\'', '').split(', ')
+    has_transcripts = transcript_fns != [""]
+    if has_transcripts:
+        assert len(transcript_fns) == len(fns), f"{fns}, {transcript_fns}"
+    for idx, fn in enumerate(fns):
+        transcript = transcript_fns[idx] if has_transcripts else ""
+        # check if file exists
+        assert os.path.isfile(fn), f"{fn} not found;"
+        if transcript != "":
+            assert os.path.isfile(transcript), transcript
+        row_data_list.append([pid, fn, lbl, transcript])
+    return row_data_list

@@ -5,7 +5,6 @@ Created on Wed Jul 22 12:57:49 2020
 
 @author: cxue2
 """
-import os
 from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
@@ -23,19 +22,33 @@ class AudioDataset(Dataset):
         tst_idx = kwargs.get('tst_idx')
         seed = kwargs.get('seed', 3227)
         holdout_test = kwargs.get('holdout_test', False)
+
         get_all_trn_test = kwargs.get('get_all_trn_test_func', fhs_sdf.get_all_trn_test)
         get_all_trn_test_kw = kwargs.get('get_all_trn_test_func_kw', {})
+
         get_sample_ids = kwargs.get('get_sample_ids', fhs_sdf.get_sample_ids)
         get_sample_ids_kw = kwargs.get('get_sample_ids_kw', {})
+
         create_folds = kwargs.get('create_folds', fhs_sdf.create_folds)
         create_folds_kw = kwargs.get('create_folds_kw', {})
+
+        get_pid = kwargs.get('get_pid', lambda r: f'{r.idtype}-{r.id}')
+        get_pid_kw = kwargs.get('get_pid_kw', {})
+
         get_label = kwargs.get('get_label', lambda r: int(r['is_demented_at_recording']))
         get_label_kw = kwargs.get('get_label_kw', {})
-        get_audio = kwargs.get('get_audio', lambda r: r['mfcc_npy_files']\
+
+        get_files = kwargs.get('get_files', lambda r: r['mfcc_npy_files']\
             .strip('[]').replace('\'', '').split(', '))
-        get_audio_kw = kwargs.get('get_audio_kw', {})
+        get_files_kw = kwargs.get('get_files_kw', {})
+
+        get_row_data = kwargs.get('get_row_data', fhs_sdf.get_row_data)
+        get_row_data_kw = kwargs.get('get_row_data_kw', {})
+
+        data_headers = kwargs.get('data_headers', ['patient_id', 'audio_fn', 'label',
+            'transcript_fn'])
         # assertions
-        assert mode in ['TRN', 'VLD', 'TST']
+        assert mode in ['TRN', 'VLD', 'TST'], mode
         # instance variables
         self.mode = mode
         self.df = None
@@ -57,49 +70,26 @@ class AudioDataset(Dataset):
         print('NumPy random seed: {}'.format(seed))
         print('# of the selected patients: {}'.format(len(np.unique(current_mode_ids))))
         print(current_mode_ids)
-        lst_p_a_l = [] # list to hold [<pid>, <audio>, <label>]
+        data_list = [] # get data from each row;
         set_p = set(current_mode_ids)
         for _, row in df_raw.iterrows():
             # patient id
-            pid = '{}-{}'.format(row.idtype, row.id)
-            # continue if patient id doesn't match
+            pid = get_pid(row, **get_pid_kw)
             if pid not in set_p:
                 continue
-            # label
             lbl = get_label(row, **get_label_kw)
-            # audio filename (convert to list; possibly more than 1 file)
-            fns = get_audio(row, **get_audio_kw)
-
-            transcript_fns = row['duration_csv_out_list']
-            transcript_fns = transcript_fns.replace('\\', '/')
-            transcript_fns = transcript_fns.strip('[]').replace('\'', '').split(', ')
-            has_transcripts = transcript_fns != [""]
-            if has_transcripts:
-                assert len(transcript_fns) == len(fns), f"{fns}, {transcript_fns}"
-            for idx, fn in enumerate(fns):
-                transcript = transcript_fns[idx] if has_transcripts else ""
-                # check if file exists
-                if os.path.exists(fn):
-                    if transcript != "":
-                        assert os.path.exists(transcript), transcript
-                    tmp = [pid, fn, lbl, transcript]
-                    lst_p_a_l.append(tmp)
-                else:
-                    print('Warning: {}.npy not found.'.format(fn[:-4]))
-        print('# of associated audio files: {}'.format(len(lst_p_a_l)))
+            fns = get_files(row, **get_files_kw)
+            data_list.extend(get_row_data(row, pid, lbl, fns, **get_row_data_kw))
+        print(f'# of associated audio files: {len(data_list)}')
         self.num_patients = len(set(current_mode_ids))
-        self.num_audio = len(lst_p_a_l)
-        self.num_positive_audio = sum([n for _, _, n, _ in lst_p_a_l])
-        self.num_negative_audio = sum([1 for _, _, n, _ in lst_p_a_l if int(n) == 0])
+        self.num_audio = len(data_list)
+        self.num_positive_audio = sum([n for _, _, n, _ in data_list])
+        self.num_negative_audio = sum([1 for _, _, n, _ in data_list if int(n) == 0])
         self.patient_list = list(set(current_mode_ids))
         self.patient_list.sort()
-        # print('Loading and processing audio files...')
-        lst = []
-        for pat, afn, lbl, tfn in lst_p_a_l:
-            lst.append((pat, afn, lbl, tfn))
+
         # save to dataframe
-        self.df_dat = pd.DataFrame(lst, columns=['patient_id', 'audio_fn', 'label',
-            'transcript_fn'])
+        self.df_dat = pd.DataFrame(data_list, columns=data_headers)
 
     def __len__(self):
         return len(self.df_dat)
