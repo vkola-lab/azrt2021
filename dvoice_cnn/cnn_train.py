@@ -8,7 +8,8 @@ import os
 import errno
 import sys
 import random
-from handle_input import cnn_argv
+from handle_input import get_args
+from select_task import select_task
 from cnn_model import Model_CNN
 from data import AudioDataset
 
@@ -22,29 +23,45 @@ def main():
     """
     main entrypoint;
     """
-    device = 2
-    num_folds = 5
-    holdout_test = False
-    debug_stop = False
-    save_model = True
-    csv_info, ext, _ = cnn_argv(sys.argv)
-    weights = [1, 2]
-    sample_two_thirds = False
-    write_fold_txt = True
+    args = get_args(sys.argv[1:])
+    args = {k: v for k, v in args.items() if v is not None}
+    task_id = args.get('task_id', 0)
+    csv_info, ext, get_label = select_task(task_id)
+    model = args.get('model', 'cnn')
+    if model.lower() not in ['cnn', 'lstm']:
+        print(f'model type {model} is not supported;')
+        sys.exit()
+    device = args.get('device', 0)
+    num_folds = args.get('num_folds', 5)
+    holdout_test = args.get('holdout_test')
+    debug_stop = args.get('debug_stop')
+    save_model = args.get('save_model')
+    negative_loss_weight = args.get('negative_loss_weight', 1)
+    positive_loss_weight = args.get('positive_loss_weight', 1)
+    weights = [int(negative_loss_weight), int(positive_loss_weight)]
+    sample_two_thirds = args.get('sample_two_thirds', False)
+    write_fold_txt = args.get('write_fold_txt')
+
+    n_epoch = int(args.get('n_epoch', 1))
+    do_random = args.get('do_random')
+    num_seeds = int(args.get('num_seeds', 1))
+    final_args = {'task_id': task_id, 'model': model, 'device': device, 'num_folds': num_folds,
+        'holdout_test': holdout_test, 'debug_stop': debug_stop, 'save_model': save_model,
+        'weights': weights, 'sample_two_thirds': sample_two_thirds,
+        'write_fold_txt': write_fold_txt, 'n_epoch': n_epoch, 'do_random': do_random,
+        'num_seeds': num_seeds}
+
     ext += "_github_test"
 
     if weights != []:
         w1, w2 = weights
-        ext += f"_with_sampling_weights_{w1}_{w2}"
+        ext += f"_with_loss_weights_{w1}_{w2}"
     if sample_two_thirds:
         ext += "_two_thirds_sample_size"
     if holdout_test:
         ext += "_static_test_fold"
 
-    n_epoch = 1
-    do_random = True
-    num_seeds = 1
-    get_dir_rsl = lambda e, n, s: f'results/cnn_{e}/{n}_epochs/{s}'
+    get_dir_rsl = lambda e, n, s: f'results/{model}_{e}/{n}_epochs/{s}'
 
     if not do_random:
         seed_list = [21269, 19952]
@@ -81,6 +98,8 @@ def main():
                 visited_outer_folds.append(i)
                 kwargs = {'num_folds': num_folds, 'vld_idx': i, 'tst_idx': tst_idx, 'seed': seed,
                    'holdout_test': holdout_test}
+                if get_label is not None:
+                    kwargs['get_label'] = get_label
                 dset_trn = AudioDataset(csv_info, 'TRN', **kwargs)
                 dset_vld = AudioDataset(csv_info, 'VLD', **kwargs)
                 dset_tst = AudioDataset(csv_info, 'TST', **kwargs)
@@ -118,8 +137,9 @@ def main():
                             f"positive_audio={dataset.num_positive_audio}]\n"
                         lines.append(line)
                     with open(txt_fp, 'w') as outfile:
-                        outfile.write(f"cnn; ext={ext}; seed={seed}; i={i}; "+\
-                            f"n_epochs={n_epoch}; loss_weights={str(weights)};\n")
+                        outfile.write(f'ext={ext}; seed={seed}; i={i};\n')
+                        outfile.write("".join([f'{k}: {v}; ' for k, v in final_args.items()]) +\
+                            "\n")
                         for line in lines:
                             outfile.write(line)
                         outfile.write(f"\nTRN IDs: {dset_trn.patient_list}\n\n")
