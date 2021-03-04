@@ -10,8 +10,10 @@ import sys
 import random
 from handle_input import get_args
 from select_task import select_task
-from cnn_model import Model_CNN
 from data import AudioDataset
+from model import Model
+from tcn import TCN
+from lstm_bi import LSTM
 
 os.environ["OMP_NUM_THREADS"] = "1" # export OMP_NUM_THREADS=4
 os.environ["OPENBLAS_NUM_THREADS"] = "1" # export OPENBLAS_NUM_THREADS=4
@@ -105,21 +107,28 @@ def main():
                 dset_tst = AudioDataset(csv_info, 'TST', **kwargs)
 
                 # initialize model
-                model = Model_CNN(n_concat=10, device=device)
+                n_concat = 10
+                if model == 'cnn':
+                    nn = TCN(device)
+                elif model == 'lstm':
+                    nn = LSTM(13 * n_concat, 64, device)
+                else:
+                    raise AssertionError(f'model type {model} is not supported;')
+                model_obj = Model(n_concat=n_concat, device=device, nn=nn)
 
                 # train model
                 model_fit_kw = {'dset_vld': dset_vld, 'n_epoch': n_epoch, 'b_size': 4,
                     'lr': 1e-4, 'weights': weights, 'sample_two_thirds': sample_two_thirds,
                     'debug_stop': debug_stop}
-                model.fit(dset_trn, **model_fit_kw)
+                model_obj.fit(dset_trn, **model_fit_kw)
 
                 if save_model:
                     if not os.path.isdir(f"pt_files/{ext}"):
                         os.makedirs(f"pt_files/{ext}")
-                    model.save_model(f"./pt_files/{ext}/"+\
+                    model_obj.save_model(f"./pt_files/{ext}/"+\
                         f"{ext}_{i}_{seed}_{n_epoch}_epochs.pt")
                 # evaluate model on validation dataset
-                rsl = model.prob(dset_tst, b_size=64)
+                rsl = model_obj.prob(dset_tst, b_size=64)
                 # break
                 # save result to dataframe
                 df_dat = dset_tst.df_dat
