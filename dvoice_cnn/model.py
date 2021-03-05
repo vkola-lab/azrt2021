@@ -72,17 +72,15 @@ class Model:
                     ascii=True, bar_format='{l_bar}{r_bar}', file=sys.stdout) as pbar:
                     for Xs, ys, _ in dldr_trn:
                         # mount data to device
-                        for idx, _ in enumerate(Xs):
-                            Xs[idx] = torch.tensor(Xs[idx], dtype=torch.float32,
-                                device=self.nn.device)
-                            Xs[idx] = Xs[idx].permute(1, 0)
-                            Xs[idx] = Xs[idx].view(1, Xs[idx].shape[0], Xs[idx].shape[1])
+                        self.nn.reformat(Xs, self.n_concat)
+
                         ys = torch.tensor(ys, dtype=torch.long, device=self.nn.device)
                         # forward and backward propagation
                         self.nn.zero_grad()
-                        scores = self.nn(Xs)
-                        # loss
-                        loss = loss_fn(scores, ys)
+                        scores, loss = self.nn.get_scores_loss(Xs, ys, loss_fn)
+                        # scores = self.nn(Xs)
+                        # # loss
+                        # loss = loss_fn(scores, ys)
                         loss.backward()
                         op.step()
                         pred = torch.argmax(scores, 1)

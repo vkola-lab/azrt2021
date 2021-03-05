@@ -16,21 +16,21 @@ def get_args(args):
     parser.add_argument("-d", "--device", help='gpu device index;')
     parser.add_argument("-nf", "--num_folds", help='number of cross validation folds;')
     parser.add_argument('-ht', '--holdout_test', action='store_true',
-        help='indicate whether or not to holdout a static test fold;')
+        help='if set, test fold is held static;')
     parser.add_argument('-db', '--debug_stop', action='store_true',
-        help='indicate whether or not to debug and stop execution;')
+        help='if set, execution is stopped short for debugging;')
     parser.add_argument('-nsm', '--no_save_model', action='store_true',
-        help='indicate whether or not to save the models;')
+        help='if set, models will not be saved;')
     parser.add_argument('-nlw', '--negative_loss_weight',
         help='loss weight for negative label;')
     parser.add_argument('-plw', '--positive_loss_weight',
         help='loss weight for positive label;')
     parser.add_argument('-stt', '--sample_two_thirds', action='store_true',
-        help='indicates whether or not to sample only two thirds;')
+        help='if set, only two thirds are randomly sampled;')
     parser.add_argument('-nwft', '--no_write_fold_txt', action='store_true',
-        help='indicates whether or not to write the fold txt files;')
+        help='if set, fold txt files are not written;')
     parser.add_argument('-ne', '--n_epoch', help='indicates number of epochs;')
     parser.add_argument('-ss', '--static_seeds', action='store_true',
-        help='indicates whether or not to pick random seed(s);')
+        help='if set, static seeds are used;')
     parser.add_argument('-ns', '--num_seeds', help='indicates number of seeds to use;')
     return parser.parse_args(args).__dict__

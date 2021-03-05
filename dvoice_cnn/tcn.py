@@ -94,3 +94,21 @@ class TCN(nn.Module):
             tmp = self.tcn(X)
             out.append(tmp)
         return out
+
+    def get_scores_loss(self, Xs, ys, loss_fn):
+        """
+        get scores and loss;
+        """
+        scores = self(Xs)
+        loss = loss_fn(scores, ys)
+        return scores, loss
+
+    def reformat(self, Xs, _):
+        """
+        reformat Xs array accordingly;
+        """
+        for idx, _ in enumerate(Xs):
+            Xs[idx] = torch.tensor(Xs[idx], dtype=torch.float32,
+                device=self.nn.device)
+            Xs[idx] = Xs[idx].permute(1, 0)
+            Xs[idx] = Xs[idx].view(1, Xs[idx].shape[0], Xs[idx].shape[1])

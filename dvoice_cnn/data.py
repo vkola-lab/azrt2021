@@ -134,3 +134,14 @@ def collate_fn(batch):
     lbl = np.stack([itm[1] for itm in batch])
     pid = np.stack([itm[2] for itm in batch])
     return aud, lbl, pid
+
+def reshape_(dat, len_lv1, len_lv2):
+    """
+    lstm reshaping
+    """
+    # raw shape
+    shp = dat.shape
+    # length to discard
+    len_lv3, len_dsc = divmod(shp[0], len_lv1 * len_lv2)
+    return dat[:-len_dsc].reshape(len_lv3, len_lv2, len_lv1 * shp[1])
+    
