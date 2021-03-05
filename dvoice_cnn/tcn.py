@@ -109,6 +109,6 @@ class TCN(nn.Module):
         """
         for idx, _ in enumerate(Xs):
             Xs[idx] = torch.tensor(Xs[idx], dtype=torch.float32,
-                device=self.nn.device)
+                device=self.device)
             Xs[idx] = Xs[idx].permute(1, 0)
             Xs[idx] = Xs[idx].view(1, Xs[idx].shape[0], Xs[idx].shape[1])

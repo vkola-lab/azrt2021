@@ -87,7 +87,7 @@ class LSTM(nn.Module):
         loss = loss_fn(scores, ys) * .1
         for i in range(len(scores_seg)):
             ys_seg = torch.ones(scores_seg[i].shape[0],
-                dtype=torch.long, device=self.nn.device) * ys[i]
+                dtype=torch.long, device=self.device) * ys[i]
             loss += loss_fn(scores_seg[i], ys_seg)
         return scores, loss
 
@@ -97,7 +97,7 @@ class LSTM(nn.Module):
         """
         for i in range(len(Xs)):
             Xs[i] = reshape_(Xs[i], n_concat, 200)
-            Xs[i] = torch.tensor(Xs[i], dtype=torch.float32, device=self.nn.device)
+            Xs[i] = torch.tensor(Xs[i], dtype=torch.float32, device=self.device)
 
 class _Module_LSTM(nn.Module):
     """
