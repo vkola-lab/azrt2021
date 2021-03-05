@@ -136,12 +136,8 @@ class Model:
             with tqdm(total=len(dset), desc='Epoch ___ (EVL)', ascii=True,
                 bar_format='{l_bar}{r_bar}', file=sys.stdout) as pbar:
                 for Xs, _, _ in dldr:
-                    # mount data to device
-                    for idx, _ in enumerate(Xs):
-                        Xs[idx] = torch.tensor(Xs[idx], dtype=torch.float32, device=self.nn.device)
-                        Xs[idx] = Xs[idx].permute(1, 0)
-                        Xs[idx] = Xs[idx].view(1, Xs[idx].shape[0], Xs[idx].shape[1])
-                    out = self.nn(Xs)
+                    self.nn.reformat(Xs, self.n_concat)
+                    out = self.nn.get_scores(Xs)
                     # append batch outputs to result
                     rsl.append(out.data.cpu().numpy())
                     # progress bar

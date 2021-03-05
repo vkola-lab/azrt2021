@@ -79,6 +79,12 @@ class LSTM(nn.Module):
             out.append(tmp.squeeze())
         return torch.stack(out), out_
 
+    def get_scores(self, Xs):
+        """
+        get scores;
+        """
+        return self(Xs)[0]
+
     def get_scores_loss(self, Xs, ys, loss_fn):
         """
         get scores and loss

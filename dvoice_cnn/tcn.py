@@ -95,11 +95,17 @@ class TCN(nn.Module):
             out.append(tmp)
         return out
 
+    def get_scores(self, Xs):
+        """
+        get scores;
+        """
+        return self(Xs)
+
     def get_scores_loss(self, Xs, ys, loss_fn):
         """
         get scores and loss;
         """
-        scores = self(Xs)
+        scores = self.get_scores(Xs)
         loss = loss_fn(scores, ys)
         return scores, loss
 

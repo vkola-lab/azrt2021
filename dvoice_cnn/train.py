@@ -33,14 +33,14 @@ def main():
     if model.lower() not in ['cnn', 'lstm']:
         print(f'model type {model} is not supported;')
         sys.exit()
-    device = args.get('device', 0)
-    num_folds = args.get('num_folds', 5)
+    device = int(args.get('device', 0))
+    num_folds = int(args.get('num_folds', 5))
     holdout_test = args.get('holdout_test')
     debug_stop = args.get('debug_stop')
     no_save_model = args.get('no_save_model')
-    negative_loss_weight = args.get('negative_loss_weight', 1)
-    positive_loss_weight = args.get('positive_loss_weight', 1)
-    weights = [int(negative_loss_weight), int(positive_loss_weight)]
+    negative_loss_weight = float(args.get('negative_loss_weight', 1))
+    positive_loss_weight = float(args.get('positive_loss_weight', 1))
+    weights = [negative_loss_weight, positive_loss_weight]
     sample_two_thirds = args.get('sample_two_thirds')
     no_write_fold_txt = args.get('no_write_fold_txt')
 
