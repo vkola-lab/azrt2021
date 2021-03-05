@@ -37,20 +37,20 @@ def main():
     num_folds = args.get('num_folds', 5)
     holdout_test = args.get('holdout_test')
     debug_stop = args.get('debug_stop')
-    save_model = args.get('save_model')
+    no_save_model = args.get('no_save_model')
     negative_loss_weight = args.get('negative_loss_weight', 1)
     positive_loss_weight = args.get('positive_loss_weight', 1)
     weights = [int(negative_loss_weight), int(positive_loss_weight)]
-    sample_two_thirds = args.get('sample_two_thirds', False)
-    write_fold_txt = args.get('write_fold_txt')
+    sample_two_thirds = args.get('sample_two_thirds')
+    no_write_fold_txt = args.get('no_write_fold_txt')
 
     n_epoch = int(args.get('n_epoch', 1))
-    do_random = args.get('do_random')
+    static_seeds = args.get('static_seeds')
     num_seeds = int(args.get('num_seeds', 1))
     final_args = {'task_id': task_id, 'model': model, 'device': device, 'num_folds': num_folds,
-        'holdout_test': holdout_test, 'debug_stop': debug_stop, 'save_model': save_model,
+        'holdout_test': holdout_test, 'debug_stop': debug_stop, 'no_save_model': no_save_model,
         'weights': weights, 'sample_two_thirds': sample_two_thirds,
-        'write_fold_txt': write_fold_txt, 'n_epoch': n_epoch, 'do_random': do_random,
+        'no_write_fold_txt': no_write_fold_txt, 'n_epoch': n_epoch, 'static_seeds': static_seeds,
         'num_seeds': num_seeds}
 
     ext += "_github_test"
@@ -65,7 +65,7 @@ def main():
 
     get_dir_rsl = lambda e, n, s: f'results/{model}_{e}/{n}_epochs/{s}'
 
-    if not do_random:
+    if static_seeds:
         seed_list = [21269, 19952]
     else:
         # seed_list = [21269, 19952]
@@ -122,7 +122,7 @@ def main():
                     'debug_stop': debug_stop}
                 model_obj.fit(dset_trn, **model_fit_kw)
 
-                if save_model:
+                if not no_save_model:
                     if not os.path.isdir(f"pt_files/{ext}"):
                         os.makedirs(f"pt_files/{ext}")
                     model_obj.save_model(f"./pt_files/{ext}/"+\
@@ -136,7 +136,7 @@ def main():
 
                 # save dataframe to csv
                 df_dat.to_csv('{}/audio_{}_{}.csv'.format(dir_rsl, seed, i), index=False)
-                if write_fold_txt:
+                if not no_write_fold_txt:
                     txt_fp = os.path.join(dir_rsl, f"comb_[{i}].txt")
                     lines = []
                     for dset_ext, dataset in [('TRN',dset_trn), ('VLD', dset_vld), ('TST',

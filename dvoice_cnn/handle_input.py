@@ -17,9 +17,9 @@ def get_args(args):
     parser.add_argument("-nf", "--num_folds", help='number of cross validation folds;')
     parser.add_argument('-ht', '--holdout_test', action='store_true',
         help='indicate whether or not to holdout a static test fold;')
-    parser.add_argument('-db', '--debug_stop', action='store_false',
+    parser.add_argument('-db', '--debug_stop', action='store_true',
         help='indicate whether or not to debug and stop execution;')
-    parser.add_argument('-sm', '--save_model', action='store_false',
+    parser.add_argument('-nsm', '--no_save_model', action='store_true',
         help='indicate whether or not to save the models;')
     parser.add_argument('-nlw', '--negative_loss_weight',
         help='loss weight for negative label;')
@@ -27,10 +27,10 @@ def get_args(args):
         help='loss weight for positive label;')
     parser.add_argument('-stt', '--sample_two_thirds', action='store_true',
         help='indicates whether or not to sample only two thirds;')
-    parser.add_argument('-wft', '--write_fold_txt', action='store_false',
+    parser.add_argument('-nwft', '--no_write_fold_txt', action='store_true',
         help='indicates whether or not to write the fold txt files;')
     parser.add_argument('-ne', '--n_epoch', help='indicates number of epochs;')
-    parser.add_argument('-dr', '--do_random', action='store_false',
+    parser.add_argument('-ss', '--static_seeds', action='store_true',
         help='indicates whether or not to pick random seed(s);')
     parser.add_argument('-ns', '--num_seeds', help='indicates number of seeds to use;')
     return parser.parse_args(args).__dict__
