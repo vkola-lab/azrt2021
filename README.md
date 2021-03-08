@@ -12,7 +12,7 @@ Python 3.6.3 or greater.
 
 Requirements listed below (contained in requirements.txt)  
 
-astroid==2.4.2  
+>astroid==2.4.2  
 certifi==2020.6.20  
 cycler==0.10.0  
 fastrlock==0.5  
@@ -27,10 +27,8 @@ mutagen==1.45.1
 numpy==1.19.2  
 pandas==1.1.2  
 Pillow==7.2.0  
-pylint==2.6.0  
 pyparsing==2.4.7  
 python-dateutil==2.8.1  
-python-speech-features-cuda==0.0.10  
 pytz==2020.1  
 scikit-learn==0.23.2  
 scipy==1.5.2  
