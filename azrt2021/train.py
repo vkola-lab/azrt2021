@@ -27,13 +27,10 @@ def main():
     """
     args = get_args(sys.argv[1:])
     args = {k: v for k, v in args.items() if v is not None}
+    task_csv_txt = args.get('task_csv_txt', 'task_csvs.txt')
     task_id = args.get('task_id', 0)
-    csv_info, ext = select_task(task_id)
+    csv_info, ext = select_task(task_id, task_csv_txt)
     get_label = None
-    print(os.path.isfile(csv_info))
-    print(task_id)
-    print(ext)
-    input("...")
     model = args.get('model', 'cnn')
     if model.lower() not in ['cnn', 'lstm']:
         print(f'model type {model} is not supported;')
