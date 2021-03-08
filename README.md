@@ -10,7 +10,7 @@ We are actively working on finding a public digital voice data set that could be
 ## Requirements:
 Python 3.6.3 or greater. 
 
-Requirements listed below (contained in requirements.txt)
+Requirements listed below (contained in requirements.txt)  
 astroid==2.4.2  
 certifi==2020.6.20  
 cycler==0.10.0  
