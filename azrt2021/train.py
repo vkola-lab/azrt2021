@@ -79,11 +79,10 @@ def main():
         ext += "_static_test_fold"
     if do_segment_audio:
         ext += f'_segment_audio_of_length_{audio_segment_min}'
-    time = str(datetime.now()).replace(' ', '_')
-    get_dir_rsl = lambda e, n, s: f'results/{model}_{e}/{n}_epochs/{s}/{time}'
+    get_dir_rsl = lambda e, n, s: f'results/{model}_{e}/{n}_epochs/{s}'
 
     if static_seeds:
-        seed_list = [21269]
+        seed_list = [21269] * 10
         # seed_list = [65779]
     else:
         # seed_list = [21269, 19952]
@@ -96,8 +95,10 @@ def main():
                 dir_rsl = get_dir_rsl(ext, n_epoch, seed)
             seed_list.append(seed)
 
-    seed_to_dir = {s: get_dir_rsl(ext, n_epoch, s) for s in seed_list}
-    for seed, dir_rsl in seed_to_dir.items():
+    for seed in seed_list:
+        dir_rsl = get_dir_rsl(ext, n_epoch, seed)
+        time = str(datetime.now()).replace(' ', '_')
+        dir_rsl = f'{dir_rsl}/{time}'
         assert not os.path.isdir(dir_rsl), dir_rsl
         # create folder for saving results
         try:
