@@ -89,10 +89,12 @@ def get_holdout_fold(sample_ids, test_ids, folds, vld_idx, mode):
         current_mode_ids = sample_ids[idx]
     return current_mode_ids
 
-def get_row_data(row, pid, lbl, fns):
+def get_row_data(row, pid, lbl, fns, **kwargs):
     """
     get row data from row, label, and files;
     """
+    segment_audio = kwargs.get('segment_audio')
+    segment_audio_kw = kwargs.get('segment_audio_kw', {})
     row_data_list = []
     transcript_fns = row['duration_csv_out_list']
     transcript_fns = transcript_fns.replace('\\', '/')
@@ -106,5 +108,38 @@ def get_row_data(row, pid, lbl, fns):
         assert os.path.isfile(fn), f"{fn} not found;"
         if transcript != "":
             assert os.path.isfile(transcript), transcript
-        row_data_list.append([pid, fn, lbl, transcript])
+        this_row_data = [pid, fn, lbl, transcript]
+        if segment_audio is not None:
+            this_row_data.extend(segment_audio(fn, **segment_audio_kw))
+        else:
+            this_row_data.extend((None, None))
+        row_data_list.append(this_row_data)
     return row_data_list
+
+def segment_mfcc(mfcc_npy, **kwargs):
+    """
+    segment mfcc npy into N minute continuous segments;
+    pick a random segment;
+    """
+    win_len_ms = kwargs.get('win_len_ms', 10)
+    segment_length_min = kwargs.get('segment_length_min', 5)
+    array = np.load(mfcc_npy)
+    windows_per_minute = 60 * 1000 / win_len_ms
+    ## mfcc windows per minute
+    ## 60 * 1000 / 10 -> 6000
+    segment_in_window_len = segment_length_min * windows_per_minute
+    ## each segment should be this long, where each
+    ## element represents win_len_ms of time and represents
+    ## one window of mfcc data
+
+    num_segments = int(np.floor(len(array) / segment_in_window_len))
+    ## get number of segments possible, round down
+    if num_segments == 0:
+        return None, None
+    count = int(segment_in_window_len)
+    start_end_list = []
+    for segment_idx in range(num_segments):
+        start = segment_idx * count
+        end = (segment_idx + 1) * count
+        start_end_list.append((start, end))
+    return random.choice(start_end_list)

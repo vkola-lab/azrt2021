@@ -8,6 +8,7 @@ import os
 import errno
 import sys
 import random
+from fhs_split_dataframe import segment_mfcc
 from handle_input import get_args
 from select_task import select_task
 from data import AudioDataset
@@ -44,6 +45,16 @@ def main():
     positive_loss_weight = float(args.get('positive_loss_weight', 1))
     weights = [negative_loss_weight, positive_loss_weight]
     sample_two_thirds = args.get('sample_two_thirds')
+
+    do_segment_audio = args.get('do_segment_audio')
+    audio_segment_min = int(args.get('audio_segment_min', 5))
+
+    if do_segment_audio:
+        segment_audio_kw = {'win_len_ms': 10, 'segment_length_min': audio_segment_min}
+        get_row_data_kw = {'segment_audio': segment_mfcc, 'segment_audio_kw': segment_audio_kw}
+    else:
+        get_row_data_kw = {}
+
     no_write_fold_txt = args.get('no_write_fold_txt')
 
     n_epoch = int(args.get('n_epoch', 1))
@@ -52,6 +63,7 @@ def main():
     final_args = {'task_id': task_id, 'model': model, 'device': device, 'num_folds': num_folds,
         'holdout_test': holdout_test, 'debug_stop': debug_stop, 'no_save_model': no_save_model,
         'weights': weights, 'sample_two_thirds': sample_two_thirds,
+        'do_segment_audio': do_segment_audio, 'audio_segment_min': audio_segment_min,
         'no_write_fold_txt': no_write_fold_txt, 'n_epoch': n_epoch, 'static_seeds': static_seeds,
         'num_seeds': num_seeds}
 
@@ -68,7 +80,7 @@ def main():
     get_dir_rsl = lambda e, n, s: f'results/{model}_{e}/{n}_epochs/{s}'
 
     if static_seeds:
-        seed_list = [21269, 19952]
+        seed_list = [21269]
     else:
         # seed_list = [21269, 19952]
         seed_list = []
@@ -101,7 +113,8 @@ def main():
                     continue ## vld and tst fold can't be the same
                 visited_outer_folds.append(i)
                 kwargs = {'num_folds': num_folds, 'vld_idx': i, 'tst_idx': tst_idx, 'seed': seed,
-                   'holdout_test': holdout_test}
+                   'holdout_test': holdout_test,
+                   'get_row_data_kw': get_row_data_kw}
                 if get_label is not None:
                     kwargs['get_label'] = get_label
                 dset_trn = AudioDataset(csv_info, 'TRN', **kwargs)

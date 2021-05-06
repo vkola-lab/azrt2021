@@ -46,7 +46,7 @@ class AudioDataset(Dataset):
         get_row_data_kw = kwargs.get('get_row_data_kw', {})
 
         data_headers = kwargs.get('data_headers', ['patient_id', 'audio_fn', 'label',
-            'transcript_fn'])
+            'transcript_fn', 'start', 'end'])
         # assertions
         assert mode in ['TRN', 'VLD', 'TST'], mode
         # instance variables
@@ -83,8 +83,8 @@ class AudioDataset(Dataset):
         print(f'# of associated audio files: {len(data_list)}')
         self.num_patients = len(set(current_mode_ids))
         self.num_audio = len(data_list)
-        self.num_positive_audio = sum([n for _, _, n, _ in data_list])
-        self.num_negative_audio = sum([1 for _, _, n, _ in data_list if int(n) == 0])
+        self.num_positive_audio = sum([n for _, _, n, *_ in data_list])
+        self.num_negative_audio = sum([1 for _, _, n, *_ in data_list if int(n) == 0])
         self.patient_list = list(set(current_mode_ids))
         self.patient_list.sort()
 
@@ -95,8 +95,12 @@ class AudioDataset(Dataset):
         return len(self.df_dat)
 
     def __getitem__(self, idx):
+        start = self.df_dat.loc[idx, 'start']
+        end = self.df_dat.loc[idx, 'end']
         fea = np.load(self.df_dat.loc[idx, 'audio_fn'])
-        return fea, self.df_dat.loc[idx,'label'], self.df_dat.loc[idx,'patient_id']
+        if start is not None and end is not None:
+            fea = fea[start:end]
+        return fea, self.df_dat.loc[idx, 'label'], self.df_dat.loc[idx, 'patient_id']
 
     @property
     def labels(self):

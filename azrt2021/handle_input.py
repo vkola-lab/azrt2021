@@ -29,6 +29,10 @@ def get_args(args):
         help='loss weight for positive label;')
     parser.add_argument('-stt', '--sample_two_thirds', action='store_true',
         help='if set, only two thirds are randomly sampled;')
+    parser.add_argument('-dsa', '--do_segment_audio', action='store_true',
+        help='if set, one segment of audio_segment_min minutes length is used as input data;')
+    parser.add_argument('-asm', '--audio_segment_min',
+        help='input to indicate length of audio segments, if using do_segment_audio;')
     parser.add_argument('-nwft', '--no_write_fold_txt', action='store_true',
         help='if set, fold txt files are not written;')
     parser.add_argument('-ne', '--n_epoch', help='indicates number of epochs;')
