@@ -97,8 +97,11 @@ class AudioDataset(Dataset):
     def __getitem__(self, idx):
         start = self.df_dat.loc[idx, 'start']
         end = self.df_dat.loc[idx, 'end']
+
         fea = np.load(self.df_dat.loc[idx, 'audio_fn'])
-        if start is not None and end is not None:
+        if not np.isnan(start) and not np.isnan(end):
+            start = int(start)
+            end = int(end)
             fea = fea[start:end]
         return fea, self.df_dat.loc[idx, 'label'], self.df_dat.loc[idx, 'patient_id']
 
@@ -148,4 +151,3 @@ def reshape_(dat, len_lv1, len_lv2):
     # length to discard
     len_lv3, len_dsc = divmod(shp[0], len_lv1 * len_lv2)
     return dat[:-len_dsc].reshape(len_lv3, len_lv2, len_lv1 * shp[1])
-    

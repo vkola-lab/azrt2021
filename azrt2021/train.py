@@ -8,6 +8,7 @@ import os
 import errno
 import sys
 import random
+from datetime import datetime
 from fhs_split_dataframe import segment_mfcc
 from handle_input import get_args
 from select_task import select_task
@@ -76,11 +77,14 @@ def main():
         ext += "_two_thirds_sample_size"
     if holdout_test:
         ext += "_static_test_fold"
-
-    get_dir_rsl = lambda e, n, s: f'results/{model}_{e}/{n}_epochs/{s}'
+    if do_segment_audio:
+        ext += f'_segment_audio_of_length_{audio_segment_min}'
+    time = str(datetime.now()).replace(' ', '_')
+    get_dir_rsl = lambda e, n, s: f'results/{model}_{e}/{n}_epochs/{s}/{time}'
 
     if static_seeds:
         seed_list = [21269]
+        # seed_list = [65779]
     else:
         # seed_list = [21269, 19952]
         seed_list = []
@@ -101,6 +105,11 @@ def main():
         except OSError as err:
             if err.errno != errno.EEXIST:
                 raise
+        trn_dir = f'{dir_rsl}/trn'
+        vld_dir = f'{dir_rsl}/vld'
+        for dir_to_make in [trn_dir, vld_dir]:
+            if not os.path.isdir(dir_to_make):
+                os.makedirs(dir_to_make)
         visited_outer_folds = []
         for i in range(num_folds):
             for j in range(num_folds):
@@ -151,6 +160,8 @@ def main():
 
                 # save dataframe to csv
                 df_dat.to_csv('{}/audio_{}_{}.csv'.format(dir_rsl, seed, i), index=False)
+                dset_trn.df_dat.to_csv(f'{trn_dir}/trn_audio_{seed}_{i}.csv', index=False)
+                dset_vld.df_dat.to_csv(f'{vld_dir}/vld_audio_{seed}_{i}.csv', index=False)
                 if not no_write_fold_txt:
                     txt_fp = os.path.join(dir_rsl, f"comb_[{i}].txt")
                     lines = []
