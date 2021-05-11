@@ -123,6 +123,7 @@ def segment_mfcc(mfcc_npy, **kwargs):
     """
     win_len_ms = kwargs.get('win_len_ms', 10)
     segment_length_min = kwargs.get('segment_length_min', 5)
+    do_return_array = kwargs.get('do_return_array', False)
     array = np.load(mfcc_npy)
     windows_per_minute = 60 * 1000 / win_len_ms
     ## mfcc windows per minute
@@ -135,6 +136,8 @@ def segment_mfcc(mfcc_npy, **kwargs):
     num_segments = int(np.floor(len(array) / segment_in_window_len))
     ## get number of segments possible, round down
     if num_segments == 0:
+        if do_return_array:
+            return [array, (None, None)]
         return None, None
     count = int(segment_in_window_len)
     start_end_list = []
@@ -142,4 +145,6 @@ def segment_mfcc(mfcc_npy, **kwargs):
         start = segment_idx * count
         end = (segment_idx + 1) * count
         start_end_list.append((start, end))
+    if do_return_array:
+        return [array, random.choice(start_end_list)]
     return random.choice(start_end_list)

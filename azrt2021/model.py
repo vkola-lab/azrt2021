@@ -29,7 +29,7 @@ class Model:
         self.to(device)
         self.device = device
 
-    def fit(self, dset_trn, **kwargs):
+    def fit(self, dset_trn, dir_rsl, **kwargs):
         """
         fit method;
         """
@@ -108,10 +108,10 @@ class Model:
                     continue
                 if vld_mcc <= met['mcc']:
                     vld_mcc = met['mcc']
-                    self.save_model('./tmp.pt')
+                    self.save_model(f'{dir_rsl}/tmp.pt')
             # load best model
             if dset_vld is not None and vld_mcc != -1:
-                self.load_model('./tmp.pt')
+                self.load_model(f'{dir_rsl}/tmp.pt')
 
     def eval(self, dset, **kwargs):
         """
@@ -119,23 +119,27 @@ class Model:
         """
         b_size = kwargs.get('b_size', 32)
         debug_stop = kwargs.get('debug_stop', False)
+        get_rest_of_info = kwargs.get('get_rest_of_info', False)
+        eval_collate_fn = kwargs.get('eval_collate_fn', collate_fn)
         # set model to validation mode
         if debug_stop:
             return []
         self.nn.eval()
         # initialize data loader
-        kwargs = {'batch_size': b_size,
+        dl_dr_kwargs = {'batch_size': b_size,
                   'shuffle': False,
                   'num_workers': 1,
-                  'collate_fn': collate_fn}
-        dldr = data.DataLoader(dset, **kwargs)
+                  'collate_fn': eval_collate_fn}
+        dldr = data.DataLoader(dset, **dl_dr_kwargs)
         # list to store result (i.e. all outputs)
         rsl = []
         # evaluation loop
+        rest_of_info_list = []
         with torch.set_grad_enabled(False):
             with tqdm(total=len(dset), desc='Epoch ___ (EVL)', ascii=True,
                 bar_format='{l_bar}{r_bar}', file=sys.stdout) as pbar:
-                for Xs, _, _ in dldr:
+                for Xs, *rest_of_info in dldr:
+                    rest_of_info_list.append(rest_of_info)
                     self.nn.reformat(Xs, self.n_concat)
                     out = self.nn.get_scores(Xs)
                     # append batch outputs to result
@@ -144,16 +148,23 @@ class Model:
                     pbar.update(len(Xs))
         # concatenate all batch outputs
         rsl = np.concatenate(rsl)
+        if get_rest_of_info:
+            return rsl, rest_of_info_list
         return rsl
 
-    def prob(self, dset, b_size=32):
+    def prob(self, dset, b_size=32, get_rest_of_info=False, eval_collate_fn=collate_fn):
         """
         calculate model output (probability);
         """
         # get network output
-        rsl = self.eval(dset, b_size=b_size)
+        rsl = self.eval(dset, b_size=b_size, get_rest_of_info=get_rest_of_info,
+            eval_collate_fn=eval_collate_fn)
         # convert output to probability by softmax
+        if get_rest_of_info:
+            rsl, rest_of_info_list = rsl
         rsl = np.exp(rsl)[:,1] / np.sum(np.exp(rsl), axis=1)
+        if get_rest_of_info:
+            return rsl, rest_of_info_list
         return rsl
 
     def save_model(self, fp):

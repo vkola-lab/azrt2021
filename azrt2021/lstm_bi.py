@@ -127,8 +127,14 @@ class _Module_LSTM(nn.Module):
         # dimensions for input
         batch_size, seq_len, input_dim = Xs.shape
         # feed the lstm by the input
-        ini_hc_state = (torch.zeros(2, batch_size, self.dim_h).to(self.device),
+        try:
+            ini_hc_state = (torch.zeros(2, batch_size, self.dim_h).to(self.device),
                         torch.zeros(2, batch_size, self.dim_h).to(self.device))
+        except RuntimeError as error:
+            print(f'batch_size: {batch_size}')
+            print(f'dim_h: {self.dim_h}')
+            print(f'device: {self.device}')
+            raise error
         # lstm
         lstm_out, _ = self.lstm(Xs, ini_hc_state)
         # combine backward and forward results

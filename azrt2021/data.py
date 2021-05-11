@@ -99,10 +99,18 @@ class AudioDataset(Dataset):
         end = self.df_dat.loc[idx, 'end']
 
         fea = np.load(self.df_dat.loc[idx, 'audio_fn'])
-        if not np.isnan(start) and not np.isnan(end):
-            start = int(start)
-            end = int(end)
-            fea = fea[start:end]
+        try:
+            if (start is not None and end is not None) and\
+                (not np.isnan(start) and not np.isnan(end)):
+                start = int(start)
+                end = int(end)
+                fea = fea[start:end]
+        except TypeError as error:
+            print(start)
+            print(end)
+            print(type(start))
+            print(type(end))
+            raise error
         return fea, self.df_dat.loc[idx, 'label'], self.df_dat.loc[idx, 'patient_id']
 
     @property
@@ -150,4 +158,6 @@ def reshape_(dat, len_lv1, len_lv2):
     shp = dat.shape
     # length to discard
     len_lv3, len_dsc = divmod(shp[0], len_lv1 * len_lv2)
-    return dat[:-len_dsc].reshape(len_lv3, len_lv2, len_lv1 * shp[1])
+    remove_leftover = dat if len_dsc == 0 else dat[:-len_dsc]
+    ## if there are leftover signal that doesn't divide evenly, remove it from the signal;
+    return remove_leftover.reshape(len_lv3, len_lv2, len_lv1 * shp[1])

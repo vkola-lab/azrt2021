@@ -156,9 +156,9 @@ def main():
         roc_dict[idx] = curr_hmp_roc
         pr_dict[idx] = curr_hmp_pr
     legend_dict = {0: ('magenta', 'CNN'), 1: ('green', 'LSTM')}
-    fig_name = f'{cnn_dir_rsl}/combined_roc.png'
+    fig_name = f'{cnn_dir_rsl}/combined_roc_lstm_from_{os.path.basename(lstm_dir_rsl)}.png'
     plot_curves(roc_dict, legend_dict, 'roc', fig_name)
-    fig_name = f'{cnn_dir_rsl}/combined_pr.png'
+    fig_name = f'{cnn_dir_rsl}/combined_pr_lstm_from_{os.path.basename(lstm_dir_rsl)}.png'
     plot_curves(pr_dict, legend_dict, 'pr', fig_name)
 
 if __name__ == '__main__':

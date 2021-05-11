@@ -37,6 +37,7 @@ def main():
     if model.lower() not in ['cnn', 'lstm']:
         print(f'model type {model} is not supported;')
         sys.exit()
+    ext = f'{model}_{ext}'
     device = int(args.get('device', 0))
     num_folds = int(args.get('num_folds', 5))
     holdout_test = args.get('holdout_test')
@@ -79,10 +80,10 @@ def main():
         ext += "_static_test_fold"
     if do_segment_audio:
         ext += f'_segment_audio_of_length_{audio_segment_min}'
-    get_dir_rsl = lambda e, n, s: f'results/{model}_{e}/{n}_epochs/{s}'
+    get_dir_rsl = lambda e, n, s: f'results/{e}/{n}_epochs/{s}'
 
     if static_seeds:
-        seed_list = [21269] * 10
+        seed_list = [21269]
         # seed_list = [65779]
     else:
         # seed_list = [21269, 19952]
@@ -145,13 +146,13 @@ def main():
                 model_fit_kw = {'dset_vld': dset_vld, 'n_epoch': n_epoch, 'b_size': 4,
                     'lr': 1e-4, 'weights': weights, 'sample_two_thirds': sample_two_thirds,
                     'debug_stop': debug_stop}
-                model_obj.fit(dset_trn, **model_fit_kw)
+                model_obj.fit(dset_trn, dir_rsl,**model_fit_kw)
 
                 if not no_save_model:
                     if not os.path.isdir(f"pt_files/{ext}"):
                         os.makedirs(f"pt_files/{ext}")
                     model_obj.save_model(f"./pt_files/{ext}/"+\
-                        f"{ext}_{i}_{seed}_{n_epoch}_epochs.pt")
+                        f"{ext}_{i}_{seed}_{n_epoch}_{time}_epochs.pt")
                 # evaluate model on validation dataset
                 rsl = model_obj.prob(dset_tst, b_size=64)
                 # break
