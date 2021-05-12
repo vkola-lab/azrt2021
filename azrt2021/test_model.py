@@ -41,7 +41,7 @@ def main():
     """
     parent_dir = "/encryptedfs/scripts/dvoice_lstm/final_azrt_github/azrt2021/azrt2021/"+\
         "model_pt_files_2021_05_11/norm_vs_demented_cnn_trained_full_audio/2021_05_11_seed_21269"
-    time = datetime.now()
+    time = str(datetime.now()).replace(' ', '_')
     device = 2
     n_concat = 10
     neural_network = TCN(device)
@@ -53,7 +53,7 @@ def main():
         if f.lower().endswith('pt')]
     pt_files.sort()
     assert len(csv_files) == len(pt_files), f'{parent_dir}, {csv_files}, {pt_files}'
-    segment_length_min = 15
+    segment_length_min = 10
     for idx, model_pt_path in enumerate(pt_files):
         model_obj.load_model(model_pt_path)
         csv_in = csv_files[idx]

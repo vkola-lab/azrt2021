@@ -9,6 +9,7 @@ import os
 import sys
 import glob
 from collections import defaultdict
+from datetime import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -98,6 +99,10 @@ def main():
     """
     cnn_dir_rsl = sys.argv[1]
     lstm_dir_rsl = sys.argv[2]
+    first_ext, second_ext = 'CNN', 'LSTM'
+    if len(sys.argv) > 3:
+        print(sys.argv)
+        first_ext, second_ext = sys.argv[3], sys.argv[4]
     roc_dict = {}
     pr_dict = {}
     for idx, dir_rsl in enumerate([cnn_dir_rsl, lstm_dir_rsl]):
@@ -155,10 +160,11 @@ def main():
         curr_hmp_pr  = get_pr_info(lst_lbl, lst_scr)
         roc_dict[idx] = curr_hmp_roc
         pr_dict[idx] = curr_hmp_pr
-    legend_dict = {0: ('magenta', 'CNN'), 1: ('green', 'LSTM')}
-    fig_name = f'{cnn_dir_rsl}/combined_roc_lstm_from_{os.path.basename(lstm_dir_rsl)}.png'
+    time = str(datetime.now()).replace(' ', '_')
+    legend_dict = {0: ('magenta', first_ext), 1: ('green', second_ext)}
+    fig_name = f'{cnn_dir_rsl}/combined_roc_from_{os.path.basename(lstm_dir_rsl)}_{time}.png'
     plot_curves(roc_dict, legend_dict, 'roc', fig_name)
-    fig_name = f'{cnn_dir_rsl}/combined_pr_lstm_from_{os.path.basename(lstm_dir_rsl)}.png'
+    fig_name = f'{cnn_dir_rsl}/combined_pr_from_{os.path.basename(lstm_dir_rsl)}_{time}.png'
     plot_curves(pr_dict, legend_dict, 'pr', fig_name)
 
 if __name__ == '__main__':
