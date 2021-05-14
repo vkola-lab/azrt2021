@@ -8,6 +8,7 @@ import fhs_split_dataframe as fsd
 from data_from_csv import AudioDatasetFromCsv, segment_collate_fn
 from model import Model
 from tcn import TCN
+from lstm_bi import LSTM
 
 def test(model_obj, dset_tst, csv_out):
     """
@@ -39,21 +40,27 @@ def main():
     main entrypoint
     2021-05-11;
     """
-    parent_dir = "/encryptedfs/scripts/dvoice_lstm/final_azrt_github/azrt2021/azrt2021/"+\
-        "model_pt_files_2021_05_11/norm_vs_demented_cnn_trained_full_audio/2021_05_11_seed_21269"
+    ## cnn dir
+    # parent_dir = "/encryptedfs/scripts/dvoice_lstm/final_azrt_github/azrt2021/azrt2021/"+\
+    #     "model_pt_files_2021_05_11/norm_vs_demented_cnn_trained_full_audio/2021_05_11_seed_21269"
+
+    ## lstm dir
+    parent_dir = "results/lstm_norm_vs_demented_github_test_with_"+\
+        "loss_weights_1.0_2.0_static_test_fold/8_epochs/21269/2021-05-11_11:06:04.065406"
     time = str(datetime.now()).replace(' ', '_')
     device = 2
     n_concat = 10
-    neural_network = TCN(device)
+    # neural_network = TCN(device)
+    neural_network = LSTM(13 * n_concat, 64, device)
     model_obj = Model(n_concat=n_concat, device=device, nn=neural_network)
     csv_files = [os.path.join(parent_dir, f) for f in os.listdir(parent_dir)\
         if f.lower().endswith('csv')]
     csv_files.sort()
     pt_files = [os.path.join(parent_dir, f) for f in os.listdir(parent_dir)\
-        if f.lower().endswith('pt')]
+        if f.lower().endswith('pt') and 'tmp' not in f.lower()]
     pt_files.sort()
     assert len(csv_files) == len(pt_files), f'{parent_dir}, {csv_files}, {pt_files}'
-    segment_length_min = 10
+    segment_length_min = 15
     for idx, model_pt_path in enumerate(pt_files):
         model_obj.load_model(model_pt_path)
         csv_in = csv_files[idx]
