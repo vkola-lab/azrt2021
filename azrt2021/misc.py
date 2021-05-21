@@ -36,7 +36,12 @@ def calc_performance_metrics(scr, lbl):
     met['f1s'] = 2 * (met['prc'] * met['sen']) / (met['prc'] + met['sen'])
     met['wt_f1s'] = f1_score(lbl, prd, average='weighted')
     met['mcc'] = (TP / N - S * P) / np.sqrt(P * S * (1-S) * (1-P))
-    met['auc'] = roc_auc_score(y_true=lbl, y_score=scr)
+    try:
+        met['auc'] = roc_auc_score(y_true=lbl, y_score=scr)
+    except KeyboardInterrupt as kbi:
+        raise kbi
+    except:
+        met['auc'] = np.nan
     return met
 
 def show_performance_metrics(met):

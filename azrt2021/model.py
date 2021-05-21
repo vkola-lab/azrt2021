@@ -40,10 +40,17 @@ class Model:
         weights = kwargs.get('weights', [])
         sample_two_thirds = kwargs.get('sample_two_thirds', False)
         debug_stop = kwargs.get('debug_stop', False)
+        random_sampling_wt = kwargs.get('random_sampling_wt')
+        replacement = kwargs.get('replacement', True)
 
         if sample_two_thirds:
             wrs = WeightedRandomSampler(dset_trn.df_sampling_weights,
                 int(np.ceil(len(dset_trn) * (2/3))), replacement=False)
+        elif random_sampling_wt is not None:
+            sampling_weights = dset_trn.sampling_weights - 1
+            sampling_weights = [s * random_sampling_wt if s == 1 else 1\
+                for s in sampling_weights]
+            wrs = WeightedRandomSampler(sampling_weights, replacement=replacement)
         else:
             wrs = None
         # initialize data loaders

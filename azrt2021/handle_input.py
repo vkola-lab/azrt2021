@@ -29,6 +29,10 @@ def get_args(args):
         help='loss weight for positive label;')
     parser.add_argument('-stt', '--sample_two_thirds', action='store_true',
         help='if set, only two thirds are randomly sampled;')
+    parser.add_argument('-lr', '--learning_rate',
+        help='assign the learning rate, default is 1e-4;')
+    parser.add_argument('-rswt', '--random_sampling_weight',
+        help='assign the positive to negative sampling weight ratio;')
     parser.add_argument('-dsa', '--do_segment_audio', action='store_true',
         help='if set, one segment of audio_segment_min minutes length is used as input data;')
     parser.add_argument('-asm', '--audio_segment_min',

@@ -47,7 +47,10 @@ def main():
     positive_loss_weight = float(args.get('positive_loss_weight', 1))
     weights = [negative_loss_weight, positive_loss_weight]
     sample_two_thirds = args.get('sample_two_thirds')
-
+    lr = float(args.get('learning_rate', 1e-4))
+    random_sampling_weight = args.get('random_sampling_weight')
+    if random_sampling_weight is not None:
+        random_sampling_weight = float(random_sampling_weight)
     do_segment_audio = args.get('do_segment_audio')
     audio_segment_min = int(args.get('audio_segment_min', 5))
 
@@ -62,18 +65,24 @@ def main():
     n_epoch = int(args.get('n_epoch', 1))
     static_seeds = args.get('static_seeds')
     num_seeds = int(args.get('num_seeds', 1))
+    replacement = True
     final_args = {'task_id': task_id, 'model': model, 'device': device, 'num_folds': num_folds,
         'holdout_test': holdout_test, 'debug_stop': debug_stop, 'no_save_model': no_save_model,
         'weights': weights, 'sample_two_thirds': sample_two_thirds,
         'do_segment_audio': do_segment_audio, 'audio_segment_min': audio_segment_min,
         'no_write_fold_txt': no_write_fold_txt, 'n_epoch': n_epoch, 'static_seeds': static_seeds,
-        'num_seeds': num_seeds}
+        'num_seeds': num_seeds,
+        'lr': lr, 'random_sampling_weight': random_sampling_weight, 'replacement': replacement}
 
     ext += "_github_test"
 
     if weights != []:
         w1, w2 = weights
         ext += f"_with_loss_weights_{w1}_{w2}"
+    if random_sampling_weight is not None:
+        ext += f'_with_random_sampling_weight_{random_sampling_weight}'
+        if not replacement:
+            ext += '_no_replacement'
     if sample_two_thirds:
         ext += "_two_thirds_sample_size"
     if holdout_test:
@@ -83,17 +92,24 @@ def main():
     get_dir_rsl = lambda e, n, s: f'results/{e}/{n}_epochs/{s}'
 
     if static_seeds:
-        seed_list = [21269]
-        # seed_list = [65779]
+        if model == "lstm":
+            # seed_list = [21269]
+            # seed_list = [61962, 21269]
+            seed_list = [21269, 41840, 49405, 50034, 62607, 70160, 72687,
+                73095, 74079, 9349, 96300]
+        else:
+            seed_list = [65779]
     else:
         # seed_list = [21269, 19952]
-        seed_list = []
+        # seed_list = [21269]
+        seed_list = [51639]
         for i in range(num_seeds):
             seed = random.randint(0, 100000)
             dir_rsl = get_dir_rsl(ext, n_epoch, seed)
             while os.path.isdir(dir_rsl):
                 seed = random.randint(0, 100000)
                 dir_rsl = get_dir_rsl(ext, n_epoch, seed)
+            os.makedirs(dir_rsl)
             seed_list.append(seed)
 
     for seed in seed_list:
@@ -144,8 +160,10 @@ def main():
 
                 # train model
                 model_fit_kw = {'dset_vld': dset_vld, 'n_epoch': n_epoch, 'b_size': 4,
-                    'lr': 1e-4, 'weights': weights, 'sample_two_thirds': sample_two_thirds,
-                    'debug_stop': debug_stop}
+                    'lr': lr, 'weights': weights, 'sample_two_thirds': sample_two_thirds,
+                    'debug_stop': debug_stop, 'random_sampling_weight': random_sampling_weight,
+                    'replacement': replacement}
+
                 model_obj.fit(dset_trn, dir_rsl,**model_fit_kw)
 
                 if not no_save_model:
