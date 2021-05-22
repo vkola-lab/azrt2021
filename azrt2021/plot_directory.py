@@ -9,6 +9,7 @@ import os
 import sys
 import glob
 from collections import defaultdict
+from datetime import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,6 +21,23 @@ plt.style.use('fivethirtyeight')
 plt.rcParams['axes.facecolor'] = 'w'
 plt.rcParams['figure.facecolor'] = 'w'
 plt.rcParams['savefig.facecolor'] = 'w'
+
+def collect_output(string, string_list, only_print=False):
+    """
+    collect output or just print;
+    """
+    if only_print:
+        print(string)
+    else:
+        string_list.append(string)
+
+def write_txt(string_list, txt_out):
+    """
+    write txt;
+    """
+    with open(txt_out, 'a') as outfile:
+        for string in string_list:
+            outfile.write(f'{string}\n')
 
 def get_dir_list(parent_dir):
     """
@@ -49,15 +67,23 @@ def plot_individual_curve(hmp_roc, legend_dict, curve_str, fig_name):
               loc='lower left')
 
     fig.savefig(fig_name, dpi=200)
-    print(fig_name)
+    # print(fig_name)
 
 def main():
     """
     main entrypoint
     """
     parent_dir = sys.argv[1]
-    directory_list = get_dir_list(parent_dir)
-    for _, dir_rsl in enumerate(directory_list):
+    seed_list = get_dir_list(parent_dir)
+    ## list of all seeds
+    inner_dirs = []
+    ## get all the dir_rsls
+    string_list = []
+    only_print = False
+    for seed_dir in seed_list:
+        inner_dirs.extend(get_dir_list(seed_dir))
+    for _, dir_rsl in enumerate(inner_dirs):
+        current_string_list = [dir_rsl + "\n"]
         mode = 'audio_avg'
         # list of all csv files
         num_csvs = None
@@ -76,9 +102,9 @@ def main():
                     dirs_read.append(directory)
         lst_lbl, lst_scr = [], []
         mtr_all = defaultdict(list)
-        assert lst_csv != [], dirs_read
+        if lst_csv == [] or len(lst_csv) != 5:
+            continue
         print(f"{len(lst_csv)} csvs found;")
-        print("\n".join(dirs_read))
         fn_metrics = {}
         for fn in lst_csv:
             fn_base = os.path.basename(fn)
@@ -103,18 +129,28 @@ def main():
             lst_lbl.append(lbl)
             lst_scr.append(scr)
         for filename, fn_mtr in fn_metrics.items():
-            print(filename)
+            collect_output(filename, current_string_list, only_print=only_print)
             for metric, metric_val in fn_mtr.items():
-                print("\t{}, {:.3f}".format(metric, metric_val))
+                collect_output("\t{}, {:.3f}".format(metric, metric_val), current_string_list, only_print=only_print)
+        collect_output('avg_performance:', current_string_list, only_print=only_print)
         for k, v in mtr_all.items():
-            print('{}: {:.3f}, {:.3f}'.format(k, np.mean(v), np.std(v)))
-            curr_hmp_roc = get_roc_info(lst_lbl, lst_scr)
-            curr_hmp_pr  = get_pr_info(lst_lbl, lst_scr)
-            legend_dict = {0: ('magenta', 'CNN')}
-            fig_name = f'{dir_rsl}/individual_roc.png'
-            plot_individual_curve(curr_hmp_roc, legend_dict, 'roc', fig_name)
-            fig_name = f'{dir_rsl}/individual_pr.png'
-            plot_individual_curve(curr_hmp_pr, legend_dict, 'pr', fig_name)
+
+            collect_output('{}: {:.3f}, {:.3f}'.format(k, np.mean(v), np.std(v)), current_string_list, only_print=only_print)
+        curr_hmp_roc = get_roc_info(lst_lbl, lst_scr)
+        curr_hmp_pr  = get_pr_info(lst_lbl, lst_scr)
+        legend_dict = {0: ('magenta', 'CNN')}
+        fig_name = f'{dir_rsl}/individual_roc.png'
+        plot_individual_curve(curr_hmp_roc, legend_dict, 'roc', fig_name)
+        fig_name = f'{dir_rsl}/individual_pr.png'
+        plot_individual_curve(curr_hmp_pr, legend_dict, 'pr', fig_name)
+        string_list.extend(current_string_list)
+    now = str(datetime.now()).replace(' ', '_').replace(':', '_')
+    txt_out = os.path.join('txt', str(datetime.now()).split(' ')[0])
+    if not os.path.isdir(txt_out):
+        os.makedirs(txt_out)
+    txt_out = os.path.join(txt_out, f'{now}_output.txt')
+    write_txt(string_list, txt_out)
+    print(txt_out)
 
 if __name__ == '__main__':
     main()

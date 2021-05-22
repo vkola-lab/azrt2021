@@ -102,7 +102,7 @@ def main():
     else:
         # seed_list = [21269, 19952]
         # seed_list = [21269]
-        seed_list = [51639]
+        seed_list = []
         for i in range(num_seeds):
             seed = random.randint(0, 100000)
             dir_rsl = get_dir_rsl(ext, n_epoch, seed)
@@ -163,7 +163,6 @@ def main():
                     'lr': lr, 'weights': weights, 'sample_two_thirds': sample_two_thirds,
                     'debug_stop': debug_stop, 'random_sampling_weight': random_sampling_weight,
                     'replacement': replacement}
-
                 model_obj.fit(dset_trn, dir_rsl,**model_fit_kw)
 
                 if not no_save_model:
