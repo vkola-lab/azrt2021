@@ -9,12 +9,11 @@ import os
 import sys
 import glob
 from collections import defaultdict
-from datetime import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from misc import calc_performance_metrics
-from misc import get_roc_info, get_pr_info
+from misc import get_roc_info, get_pr_info, get_date
 
 plt.style.use('fivethirtyeight')
 plt.rcParams['axes.facecolor'] = 'w'
@@ -91,7 +90,7 @@ def plot_curves(data, legend_dict, curve_str, fig_name):
               bbox_to_anchor=(0.04, 0.04, 0.5, 0.5),
               loc='lower left')
 
-    fig.savefig(fig_name, dpi=200)
+    fig.savefig(fig_name, dpi=300, format='tiff')
     print(fig_name)
 
 def main():
@@ -101,9 +100,14 @@ def main():
     cnn_dir_rsl = sys.argv[1]
     lstm_dir_rsl = sys.argv[2]
     first_ext, second_ext = 'CNN', 'LSTM'
+    tiff_dir = os.path.join('tiff', get_date())
     if len(sys.argv) > 3:
         print(sys.argv)
         first_ext, second_ext = sys.argv[3], sys.argv[4]
+    if len(sys.argv) == 6:
+        tiff_dir = os.path.join(tiff_dir, sys.argv[5])
+    if not os.path.isdir(tiff_dir):
+        os.makedirs(tiff_dir)
     roc_dict = {}
     pr_dict = {}
     for idx, dir_rsl in enumerate([cnn_dir_rsl, lstm_dir_rsl]):
@@ -161,15 +165,11 @@ def main():
         curr_hmp_pr  = get_pr_info(lst_lbl, lst_scr)
         roc_dict[idx] = curr_hmp_roc
         pr_dict[idx] = curr_hmp_pr
-    time = str(datetime.now()).replace(' ', '_').replace(':', '_')
     legend_dict = {0: ('magenta', first_ext), 1: ('green', second_ext)}
-    png_dir = os.path.join(cnn_dir_rsl, 'png', time)
-    if not os.path.isdir(png_dir):
-        os.makedirs(png_dir)
     lstm_ext = lstm_dir_rsl.replace(' ', '_').replace(':', '')
-    fig_name = f'{png_dir}/combined_roc_from_{os.path.basename(lstm_ext)}.png'
+    fig_name = f'{tiff_dir}/combined_roc_from_{os.path.basename(lstm_ext)}.tiff'
     plot_curves(roc_dict, legend_dict, 'roc', fig_name)
-    fig_name = f'{png_dir}/combined_pr_from_{os.path.basename(lstm_ext)}.png'
+    fig_name = f'{tiff_dir}/combined_pr_from_{os.path.basename(lstm_ext)}.tiff'
     plot_curves(pr_dict, legend_dict, 'pr', fig_name)
 
 if __name__ == '__main__':

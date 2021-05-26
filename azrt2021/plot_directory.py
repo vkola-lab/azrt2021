@@ -67,6 +67,7 @@ def plot_individual_curve(hmp_roc, legend_dict, curve_str, fig_name):
               loc='lower left')
 
     fig.savefig(fig_name, dpi=200)
+    plt.close('all')
     # print(fig_name)
 
 def main():
@@ -131,11 +132,13 @@ def main():
         for filename, fn_mtr in fn_metrics.items():
             collect_output(filename, current_string_list, only_print=only_print)
             for metric, metric_val in fn_mtr.items():
-                collect_output("\t{}, {:.3f}".format(metric, metric_val), current_string_list, only_print=only_print)
+                collect_output("\t{}, {:.3f}".format(metric, metric_val), current_string_list,
+                    only_print=only_print)
         collect_output('avg_performance:', current_string_list, only_print=only_print)
         for k, v in mtr_all.items():
 
-            collect_output('{}: {:.3f}, {:.3f}'.format(k, np.mean(v), np.std(v)), current_string_list, only_print=only_print)
+            collect_output('{}: {:.3f}, {:.3f}'.format(k, np.mean(v), np.std(v)),
+                current_string_list, only_print=only_print)
         curr_hmp_roc = get_roc_info(lst_lbl, lst_scr)
         curr_hmp_pr  = get_pr_info(lst_lbl, lst_scr)
         legend_dict = {0: ('magenta', 'CNN')}

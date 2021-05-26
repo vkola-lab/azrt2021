@@ -5,13 +5,25 @@ Created on Sat Jul 25 14:52:15 2020
 
 @author: cxue2
 """
-
+from datetime import datetime
 import numpy as np
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_auc_score, roc_curve, auc
 from sklearn.metrics import precision_recall_curve, average_precision_score
 from sklearn.metrics import f1_score
 from scipy import interp
+
+def get_date():
+    """
+    get yyyy mm dd
+    """
+    return str(datetime.now()).split(' ')[0]
+
+def get_time():
+    """
+    get full timestamp
+    """
+    return str(datetime.now()).replace(' ', '_').replace(':', '')
 
 def calc_performance_metrics(scr, lbl):
     """
