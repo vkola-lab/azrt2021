@@ -3,6 +3,7 @@ test_model.py
 module for testing using a model PT file (already trained);
 """
 import os
+import sys
 from datetime import datetime
 import fhs_split_dataframe as fsd
 from data_from_csv import AudioDatasetFromCsv, segment_collate_fn
@@ -40,25 +41,14 @@ def main():
     main entrypoint
     2021-05-11;
     """
-    ## cnn dir
-    # parent_dir = "/encryptedfs/scripts/dvoice_lstm/final_azrt_github/azrt2021/azrt2021/"+\
-    #     "model_pt_files_2021_05_11/norm_vs_demented_cnn_trained_full_audio/2021_05_11_seed_21269"
-
-    ## cnn nondemented
-    # parent_dir = "results/cnn_nondemented_vs_demented_github_test_with_loss_weights_1.0_1.0"+\
-    #     "_with_random_sampling_weight_2.0_static_test_fold/64_epochs/3934/2021-05-22_01:26:59.563998"
-
-    ## lstm nondemented
-    parent_dir = "results/lstm_nondemented_vs_demented_github_test_with_loss_weights_1.0"+\
-        "_1.0_with_random_sampling_weight_2.0_static_test_fold/32_epochs/3934/2021-05-22_18:13:16.470489"
-    ## lstm dir
-    # parent_dir = "results/lstm_norm_vs_demented_github_test_with_"+\
-    #     "loss_weights_1.0_2.0_static_test_fold/8_epochs/21269/2021-05-11_11:06:04.065406"
+    parent_dir = sys.argv[1]
     time = str(datetime.now()).replace(' ', '_')
     device = 2
     n_concat = 10
-    # neural_network = TCN(device)
-    neural_network = LSTM(13 * n_concat, 64, device)
+    if sys.argv[2].lower() == "lstm":
+        neural_network = LSTM(13 * n_concat, 64, device)
+    else:
+        neural_network = TCN(device)
     model_obj = Model(n_concat=n_concat, device=device, nn=neural_network)
     csv_files = [os.path.join(parent_dir, f) for f in os.listdir(parent_dir)\
         if f.lower().endswith('csv')]
@@ -84,7 +74,8 @@ def main():
             dset_tst = AudioDatasetFromCsv(csv_in, **kwargs)
             base, ext = os.path.splitext(os.path.basename(csv_in))
             csv_out = f'{base}_{os.path.basename(model_pt_path)}{ext}'
-            csv_out_parent = os.path.join(parent_dir, f'pt_files_aud_seg_{segment_length_min}_{time}')
+            csv_out_parent = os.path.join(parent_dir,
+                f'pt_files_aud_seg_{segment_length_min}_{time}')
             if not os.path.isdir(csv_out_parent):
                 os.makedirs(csv_out_parent)
             csv_out = os.path.join(csv_out_parent, csv_out)
