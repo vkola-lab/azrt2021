@@ -12,20 +12,20 @@ Python 3.6.3 or greater.
 
 Requirements listed below (contained in requirements.txt)  
 
->dataclasses==0.8
-joblib==1.0.1
-numpy==1.19.5
-pandas==1.1.5
-python-dateutil==2.8.1
-pytz==2021.1
-scikit-learn==0.24.2
-scipy==1.5.4
-six==1.16.0
-sklearn==0.0
-threadpoolctl==2.1.0
-torch==1.8.1
-tqdm==4.61.0
-typing-extensions==3.10.0.0
+>dataclasses==0.8  
+joblib==1.0.1  
+numpy==1.19.5  
+pandas==1.1.5  
+python-dateutil==2.8.1  
+pytz==2021.1  
+scikit-learn==0.24.2  
+scipy==1.5.4  
+six==1.16.0  
+sklearn==0.0  
+threadpoolctl==2.1.0  
+torch==1.8.1  
+tqdm==4.61.0  
+typing-extensions==3.10.0.0  
 
 ## Installation:
 `pip install -r requirements.txt`
