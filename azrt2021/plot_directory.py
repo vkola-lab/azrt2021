@@ -136,7 +136,6 @@ def main():
                     only_print=only_print)
         collect_output('avg_performance:', current_string_list, only_print=only_print)
         for k, v in mtr_all.items():
-
             collect_output('{}: {:.3f}, {:.3f}'.format(k, np.mean(v), np.std(v)),
                 current_string_list, only_print=only_print)
         curr_hmp_roc = get_roc_info(lst_lbl, lst_scr)
