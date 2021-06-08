@@ -1,4 +1,4 @@
-# Detection of dementia on raw voice recordings from the Framingham Heart Study using deep learning
+# Detection of dementia on raw voice recordings using deep learning: A Framingham Heart Study
 
 ## Technical Overview:
 The model code is written using Pytorch and this iteration of the code assumes usage of a GPU. The code can be adjusted to run with a CPU instead, although it will be noticeably slower. The data we used from the Framingham Heart Study is not publicly available and so users will have to supply their own data inputs to the model. Users will also have to create their own functions to both read their own data and input their data to the models.
