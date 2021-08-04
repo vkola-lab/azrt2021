@@ -75,6 +75,8 @@ def main():
     main entrypoint
     """
     parent_dir = sys.argv[1]
+    parent_dir_ext = os.path.normpath(parent_dir).split(os.sep)[-2]
+    ## strip trailing slashes and then grab second to last folder name;
     seed_list = get_dir_list(parent_dir)
     ## list of all seeds
     inner_dirs = []
@@ -122,10 +124,10 @@ def main():
                 lbl = tmp[:,0].astype(np.int)
                 scr = tmp[:,-1]
             mtr = calc_performance_metrics(scr, lbl)
-            for k in mtr:
+            for k, mtr_val in mtr.items():
                 if k == 'mat':
                     continue
-                mtr_all[k].append(mtr[k])
+                mtr_all[k].append(mtr_val)
             fn_metrics[fn] = {mk: mv for mk, mv in mtr.items() if mk != 'mat'}
             lst_lbl.append(lbl)
             lst_scr.append(scr)
@@ -147,7 +149,7 @@ def main():
         plot_individual_curve(curr_hmp_pr, legend_dict, 'pr', fig_name)
         string_list.extend(current_string_list)
     now = str(datetime.now()).replace(' ', '_').replace(':', '_')
-    txt_out = os.path.join('txt', str(datetime.now()).split(' ')[0])
+    txt_out = os.path.join('txt', str(datetime.now()).split(' ', maxsplit=1)[0], parent_dir_ext)
     if not os.path.isdir(txt_out):
         os.makedirs(txt_out)
     txt_out = os.path.join(txt_out, f'{now}_output.txt')

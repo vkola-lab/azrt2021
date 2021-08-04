@@ -19,6 +19,9 @@ def get_args(args):
     parser.add_argument("-nf", "--num_folds", help='number of cross validation folds;')
     parser.add_argument('-ht', '--holdout_test', action='store_true',
         help='if set, test fold is held static;')
+    parser.add_argument('-ttm', '--test_transcript_mri', action='store_true',
+        help='if set along with holdout test, the static test fold pertains only to those with'+\
+            'transcripts and 1.5TMRIs within 6mos;')
     parser.add_argument('-db', '--debug_stop', action='store_true',
         help='if set, execution is stopped short for debugging;')
     parser.add_argument('-nsm', '--no_save_model', action='store_true',

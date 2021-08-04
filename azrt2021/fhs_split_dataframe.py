@@ -7,13 +7,26 @@ import os
 import random
 import numpy as np
 
-def get_all_trn_test(df_raw):
+def has_transcript_and_mri(df_raw):
+    """
+    those w/transcript + mri;
+    """
+    return df_raw.loc[df_raw['has_transcript_and_nearby_mri'] == "1"]
+
+def has_transcript(df_raw):
+    """
+    default func for getting test IDs;
+    """
+    return df_raw.loc[df_raw["duration_csv_out_list_len"] != "0"]
+
+def get_all_trn_test(df_raw, **kwargs):
     """
     get list of all fhs_ids;
     get list of fhs ids that are in the static test fold;
     rest are the other_fhs_ids;
     """
-    test_ids = get_fhs_ids(df_raw.loc[df_raw["duration_csv_out_list_len"] != "0"])
+    get_test_ids = kwargs.get('get_test_ids', has_transcript)
+    test_ids = get_fhs_ids(get_test_ids(df_raw))
     all_ids = get_fhs_ids(df_raw)
     other_ids = np.array([fid for fid in all_ids if fid not in test_ids])
     return all_ids, test_ids, other_ids

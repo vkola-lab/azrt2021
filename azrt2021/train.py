@@ -9,7 +9,7 @@ import errno
 import sys
 import random
 from datetime import datetime
-from fhs_split_dataframe import segment_mfcc
+from fhs_split_dataframe import segment_mfcc, has_transcript_and_mri
 from handle_input import get_args
 from select_task import select_task
 from data import AudioDataset
@@ -32,7 +32,13 @@ def main():
     task_csv_txt = args.get('task_csv_txt', 'task_csvs.txt')
     task_id = args.get('task_id', 0)
     csv_info, ext = select_task(task_id, task_csv_txt)
+
     get_label = None
+    if '_vs_ad' in ext:
+        get_label = lambda r: int(str(r['is_ad']) == '1')
+    elif ext == 'norm_vs_mci':
+        get_label = lambda r: int(str(r['is_mci']) == '1')
+
     model = args.get('model', 'cnn')
     if model.lower() not in ['cnn', 'lstm']:
         print(f'model type {model} is not supported;')
@@ -41,6 +47,7 @@ def main():
     device = int(args.get('device', 0))
     num_folds = int(args.get('num_folds', 5))
     holdout_test = args.get('holdout_test')
+    test_transcript_mri = args.get('test_transcript_mri')
     debug_stop = args.get('debug_stop')
     no_save_model = args.get('no_save_model')
     negative_loss_weight = float(args.get('negative_loss_weight', 1))
@@ -87,6 +94,8 @@ def main():
         ext += "_two_thirds_sample_size"
     if holdout_test:
         ext += "_static_test_fold"
+        if test_transcript_mri:
+            ext += '_test_transcript_mri'
     if do_segment_audio:
         ext += f'_segment_audio_of_length_{audio_segment_min}'
     get_dir_rsl = lambda e, n, s: f'results/{e}/{n}_epochs/{s}'
@@ -103,7 +112,7 @@ def main():
     else:
         # seed_list = [21269, 19952]
         # seed_list = [21269]
-        seed_list = []
+        seed_list = [72901]
         for i in range(num_seeds):
             seed = random.randint(0, 100000)
             dir_rsl = get_dir_rsl(ext, n_epoch, seed)
@@ -143,6 +152,9 @@ def main():
                 kwargs = {'num_folds': num_folds, 'vld_idx': i, 'tst_idx': tst_idx, 'seed': seed,
                    'holdout_test': holdout_test,
                    'get_row_data_kw': get_row_data_kw}
+                if test_transcript_mri:
+                    get_all_trn_test_func_kw = {'get_test_ids': has_transcript_and_mri}
+                    kwargs['get_all_trn_test_kw'] = get_all_trn_test_func_kw
                 if get_label is not None:
                     kwargs['get_label'] = get_label
                 dset_trn = AudioDataset(csv_info, 'TRN', **kwargs)

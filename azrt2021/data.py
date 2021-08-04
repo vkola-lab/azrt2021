@@ -23,8 +23,8 @@ class AudioDataset(Dataset):
         seed = kwargs.get('seed', 3227)
         holdout_test = kwargs.get('holdout_test', False)
 
-        get_all_trn_test = kwargs.get('get_all_trn_test_func', fhs_sdf.get_all_trn_test)
-        get_all_trn_test_kw = kwargs.get('get_all_trn_test_func_kw', {})
+        get_all_trn_test = kwargs.get('get_all_trn_test', fhs_sdf.get_all_trn_test)
+        get_all_trn_test_kw = kwargs.get('get_all_trn_test_kw', {})
 
         get_sample_ids = kwargs.get('get_sample_ids', fhs_sdf.get_sample_ids)
         get_sample_ids_kw = kwargs.get('get_sample_ids_kw', {})
