@@ -49,6 +49,10 @@ def main():
         neural_network = LSTM(13 * n_concat, 64, device)
     else:
         neural_network = TCN(device)
+    test_full_aud = False
+    if len(sys.argv) == 4:
+        test_full_aud = int(sys.argv[3]) == 1
+
     model_obj = Model(n_concat=n_concat, device=device, nn=neural_network)
     csv_files = [os.path.join(parent_dir, f) for f in os.listdir(parent_dir)\
         if f.lower().endswith('csv')]
@@ -62,29 +66,54 @@ def main():
         print(pt_file)
         print()
         print()
+    if test_full_aud:
+        print('testing full audio')
+    else:
+        print('testing segments 5/10/15')
     input('check above...')
+    for idx, model_pt_path in enumerate(pt_files):
+        csv_in = csv_files[idx]
+        if not test_full_aud:
+            test_segment(model_pt_path, model_obj, csv_in, parent_dir, time)
+        else:
+            test_full_audio(model_pt_path, model_obj, csv_in, parent_dir, time)
+
+def test_segment(model_pt_path, model_obj, csv_in, parent_dir, time):
+    """
+    test pretrained model on segments of audio;
+    """
     for segment_length_min in [5, 10, 15]:
-        for idx, model_pt_path in enumerate(pt_files):
-            model_obj.load_model(model_pt_path)
-            csv_in = csv_files[idx]
-            segment_audio_kw = {'win_len_ms': 10, 'segment_length_min': segment_length_min,
-                'do_return_array': True}
-            kwargs = {'do_segment_audio': True, 'segment_audio': fsd.segment_mfcc,
-                'segment_audio_kw': segment_audio_kw}
-            dset_tst = AudioDatasetFromCsv(csv_in, **kwargs)
-            base, ext = os.path.splitext(os.path.basename(csv_in))
-            csv_out = f'{base}_{os.path.basename(model_pt_path)}{ext}'
-            csv_out_parent = os.path.join(parent_dir,
-                f'pt_files_aud_seg_{segment_length_min}_{time}')
-            if not os.path.isdir(csv_out_parent):
-                os.makedirs(csv_out_parent)
-            csv_out = os.path.join(csv_out_parent, csv_out)
-            # print(model_obj)
-            # print(dset_tst)
-            # print(csv_in)
-            # print(csv_out)
-            test(model_obj, dset_tst, csv_out)
-            print(csv_out)
+        model_obj.load_model(model_pt_path)
+        segment_audio_kw = {'win_len_ms': 10, 'segment_length_min': segment_length_min,
+            'do_return_array': True}
+        kwargs = {'do_segment_audio': True, 'segment_audio': fsd.segment_mfcc,
+            'segment_audio_kw': segment_audio_kw}
+        dset_tst = AudioDatasetFromCsv(csv_in, **kwargs)
+        base, ext = os.path.splitext(os.path.basename(csv_in))
+        csv_out = f'{base}_{os.path.basename(model_pt_path)}{ext}'
+        csv_out_parent = os.path.join(parent_dir,
+            f'pt_files_aud_seg_{segment_length_min}_{time}')
+        if not os.path.isdir(csv_out_parent):
+            os.makedirs(csv_out_parent)
+        csv_out = os.path.join(csv_out_parent, csv_out)
+        test(model_obj, dset_tst, csv_out)
+        print(csv_out)
+
+def test_full_audio(model_pt_path, model_obj, csv_in, parent_dir, time):
+    """
+    test full audio
+    """
+    model_obj.load_model(model_pt_path)
+    dset_tst = AudioDatasetFromCsv(csv_in)
+    base, ext = os.path.splitext(os.path.basename(csv_in))
+    csv_out = f'{base}_{os.path.basename(model_pt_path)}{ext}'
+    csv_out_parent = os.path.join(parent_dir,
+        f'pt_files_full_{time}')
+    if not os.path.isdir(csv_out_parent):
+        os.makedirs(csv_out_parent)
+    csv_out = os.path.join(csv_out_parent, csv_out)
+    test(model_obj, dset_tst, csv_out)
+    print(csv_out)
 
 if __name__ == '__main__':
     main()
